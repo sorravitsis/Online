@@ -7,14 +7,20 @@ const encoder = new TextEncoder();
 
 export type SessionPayload = JWTPayload & {
   sub: string;
+  jti?: string;
 };
 
 function getSecret() {
   return encoder.encode(env.auth.secret());
 }
 
-export async function signSessionToken(subject: string) {
-  return new SignJWT({})
+export async function signSessionToken(
+  subject: string,
+  sessionId = crypto.randomUUID()
+) {
+  return new SignJWT({
+    jti: sessionId
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(subject)
     .setIssuedAt()
@@ -39,4 +45,26 @@ export async function getRequestSession(request: NextRequest) {
   } catch {
     return null;
   }
+}
+
+export async function getCurrentSession() {
+  const { cookies } = await import("next/headers");
+  const token = cookies().get(env.auth.cookieName)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await verifySessionToken(token);
+  } catch {
+    return null;
+  }
+}
+
+export function getSessionIdentifier(
+  session: SessionPayload | null | undefined,
+  fallback = "unknown-session"
+) {
+  return session?.jti ?? session?.sub ?? fallback;
 }

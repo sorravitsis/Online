@@ -24,6 +24,8 @@ export function mapBatchError(error?: string) {
   switch (error) {
     case "invalid_request":
       return "The batch request payload could not be read.";
+    case "unauthorized":
+      return "Your session expired. Sign in again before starting a batch.";
     case "order_ids_required":
       return "Choose at least one order before starting the batch.";
     case "batch_limit_exceeded":

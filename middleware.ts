@@ -3,7 +3,11 @@ import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { getRequestSession } from "@/lib/auth";
 
-const PUBLIC_PATHS = new Set(["/login", "/api/auth/login"]);
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/api/cron/cleanup-locks"
+]);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -2,6 +2,8 @@ export function mapScanError(error?: string) {
   switch (error) {
     case "invalid_request":
       return "The print request could not be read. Please scan again.";
+    case "unauthorized":
+      return "Your session expired. Sign in again before printing.";
     case "already_printed":
       return "This order was already printed. Check the existing AWB before retrying.";
     case "locked":
