@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClientErrorBoundary } from "@/components/client-error-boundary";
 import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
@@ -19,7 +20,13 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8">
-          <LoginForm />
+          <ClientErrorBoundary
+            description="The login form hit an unexpected runtime issue. Retry this screen before checking the password hash configuration."
+            homeHref="/login"
+            title="Login form needs recovery"
+          >
+            <LoginForm />
+          </ClientErrorBoundary>
         </div>
 
         <div className="mt-8 rounded-2xl border bg-slate-50/80 p-4 text-sm text-slate-600">

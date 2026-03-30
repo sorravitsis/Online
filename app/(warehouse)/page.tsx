@@ -1,3 +1,4 @@
+import { ClientErrorBoundary } from "@/components/client-error-boundary";
 import { OrdersDashboard } from "@/components/orders-dashboard";
 import { normalizeOrderFilters } from "@/lib/order-filters";
 import { listOrders } from "@/lib/orders";
@@ -31,13 +32,18 @@ export default async function WarehousePage({
   ]);
 
   return (
-    <OrdersDashboard
-      filters={filters}
-      initialOrders={orders}
-      initialPage={page}
-      initialTotal={total}
-      pageSize={pageSize}
-      stores={stores}
-    />
+    <ClientErrorBoundary
+      description="The live orders dashboard hit a client-side problem while rendering filters or realtime updates."
+      title="Order dashboard needs recovery"
+    >
+      <OrdersDashboard
+        filters={filters}
+        initialOrders={orders}
+        initialPage={page}
+        initialTotal={total}
+        pageSize={pageSize}
+        stores={stores}
+      />
+    </ClientErrorBoundary>
   );
 }

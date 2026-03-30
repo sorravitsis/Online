@@ -22,6 +22,10 @@ const tests = [
   {
     name: "admin helpers",
     run: require("./admin.test.cjs").run
+  },
+  {
+    name: "hardening helpers",
+    run: require("./hardening.test.cjs").run
   }
 ];
 

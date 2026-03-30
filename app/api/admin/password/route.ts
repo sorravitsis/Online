@@ -3,10 +3,19 @@ import { failure, success } from "@/lib/api";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
+  let body: {
     currentPassword?: string;
     newPassword?: string;
   };
+
+  try {
+    body = (await request.json()) as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+  } catch {
+    return failure("invalid_request", 400);
+  }
 
   if (!body.currentPassword || !body.newPassword) {
     return failure("passwords_required", 400);

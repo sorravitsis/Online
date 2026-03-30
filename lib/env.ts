@@ -22,6 +22,9 @@ export const env = {
     secret: () => requireEnv("AUTH_SECRET"),
     cookieName: "awb_session"
   },
+  cron: {
+    secret: () => optionalEnv("CRON_SECRET")
+  },
   printer: {
     host: () => requireEnv("PRINTER_HOST"),
     port: () => Number.parseInt(optionalEnv("PRINTER_PORT", "9100") ?? "9100", 10)
