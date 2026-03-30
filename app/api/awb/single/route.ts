@@ -1,0 +1,37 @@
+import { failure, success } from "@/lib/api";
+import { processSingleOrderPrint } from "@/lib/print-workflow";
+
+export async function POST(request: Request) {
+  const body = (await request.json()) as { orderId?: string };
+
+  if (!body.orderId) {
+    return failure("order_id_required", 400);
+  }
+
+  try {
+    const result = await processSingleOrderPrint(body.orderId, "app-session");
+
+    if (result.status === "failed") {
+      const status =
+        result.error === "already_printed"
+          ? 409
+          : result.error === "locked"
+            ? 409
+            : result.error === "order_not_found"
+              ? 404
+              : 500;
+
+      return failure(result.error ?? "print_failed", status);
+    }
+
+    return success({
+      awbNumber: result.awbNumber,
+      orderId: result.orderId
+    });
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Unable to print order.",
+      500
+    );
+  }
+}
