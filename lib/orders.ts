@@ -1,15 +1,11 @@
 import { createAdminClient } from "@/lib/supabase";
+import type { OrderFilters } from "@/lib/order-filters";
 import type { OrderWithStore } from "@/lib/types";
 
 const PAGE_SIZE = 50;
 
-type ListOrdersFilters = {
-  status?: string;
-  storeId?: string;
-  date?: string;
-  page?: number;
+type ListOrdersFilters = Partial<OrderFilters> & {
   barcode?: string;
-  limit?: number;
 };
 
 export async function listOrders(filters: ListOrdersFilters) {

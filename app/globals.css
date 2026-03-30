@@ -22,3 +22,16 @@ body {
 * {
   border-color: var(--border);
 }
+
+@keyframes row-flash {
+  0% {
+    background-color: rgba(59, 130, 246, 0.18);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.order-row-flash {
+  animation: row-flash 2s ease-out;
+}

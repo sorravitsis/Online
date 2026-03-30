@@ -6,6 +6,10 @@ const tests = [
   {
     name: "print workflow",
     run: require("./print-workflow.test.cjs").run
+  },
+  {
+    name: "order filters",
+    run: require("./order-filters.test.cjs").run
   }
 ];
 
