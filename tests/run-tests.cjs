@@ -10,6 +10,10 @@ const tests = [
   {
     name: "order filters",
     run: require("./order-filters.test.cjs").run
+  },
+  {
+    name: "scan helpers",
+    run: require("./scan.test.cjs").run
   }
 ];
 
