@@ -4,7 +4,13 @@ import { getOrdersByIds } from "@/lib/orders";
 import { processBatchOrderPrint } from "@/lib/print-workflow";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { orderIds?: string[] };
+  let body: { orderIds?: string[] };
+
+  try {
+    body = (await request.json()) as { orderIds?: string[] };
+  } catch {
+    return failure("invalid_request", 400);
+  }
 
   if (!Array.isArray(body.orderIds) || body.orderIds.length === 0) {
     return failure("order_ids_required", 400);

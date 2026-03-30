@@ -26,11 +26,21 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const body = (await request.json()) as {
+  let body: {
     id?: string;
     batch_limit?: number;
     is_active?: boolean;
   };
+
+  try {
+    body = (await request.json()) as {
+      id?: string;
+      batch_limit?: number;
+      is_active?: boolean;
+    };
+  } catch {
+    return failure("invalid_request", 400);
+  }
 
   if (!body.id) {
     return failure("store_id_required", 400);
@@ -64,7 +74,10 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return failure(error.message, 500);
+      return failure(
+        error.code === "PGRST116" ? "store_not_found" : error.message,
+        error.code === "PGRST116" ? 404 : 500
+      );
     }
 
     return success({

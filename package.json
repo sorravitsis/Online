@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --require ./tests/helpers/register-ts.cjs ./tests/run-tests.cjs"
+    "test": "node --require ./tests/helpers/register-ts.cjs ./tests/run-tests.cjs",
+    "preflight": "npm exec tsc --noEmit && npm test && npm run build",
+    "seed:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/seed-load-test.cjs",
+    "verify:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/verify-load-test.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

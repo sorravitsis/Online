@@ -2,7 +2,13 @@ import { failure, success } from "@/lib/api";
 import { processSingleOrderPrint } from "@/lib/print-workflow";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { orderId?: string };
+  let body: { orderId?: string };
+
+  try {
+    body = (await request.json()) as { orderId?: string };
+  } catch {
+    return failure("invalid_request", 400);
+  }
 
   if (!body.orderId) {
     return failure("order_id_required", 400);
@@ -17,6 +23,8 @@ export async function POST(request: Request) {
           ? 409
           : result.error === "locked"
             ? 409
+            : result.error === "order_not_pending"
+              ? 409
             : result.error === "order_not_found"
               ? 404
               : 500;

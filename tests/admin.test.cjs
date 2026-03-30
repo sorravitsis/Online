@@ -13,6 +13,10 @@ async function run() {
     "Batch limit must be an integer between 1 and 50."
   );
   assert.equal(
+    mapAdminError("store_not_found"),
+    "The selected store could not be found anymore. Refresh and try again."
+  );
+  assert.equal(
     mapAdminError("password_confirmation_mismatch"),
     "New password confirmation does not match."
   );

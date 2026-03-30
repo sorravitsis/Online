@@ -3,6 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function mapLoginError(error?: string) {
+  switch (error) {
+    case "invalid_request":
+      return "The login request could not be parsed. Try again.";
+    case "invalid_password":
+      return "The shared password is incorrect.";
+    case "password_config_missing":
+      return "The password hash is missing from app_config.";
+    default:
+      return error ?? "Unable to sign in.";
+  }
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -25,7 +38,7 @@ export function LoginForm() {
       const json = await response.json();
 
       if (!response.ok || !json.success) {
-        setError(json.error ?? "Unable to sign in.");
+        setError(mapLoginError(json.error));
         return;
       }
 

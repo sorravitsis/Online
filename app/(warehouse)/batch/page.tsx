@@ -1,4 +1,5 @@
 import { BatchDashboard } from "@/components/batch-dashboard";
+import { ClientErrorBoundary } from "@/components/client-error-boundary";
 import { normalizeOrderFilters } from "@/lib/order-filters";
 import { listOrders } from "@/lib/orders";
 import { listStores } from "@/lib/stores";
@@ -33,10 +34,16 @@ export default async function BatchPage({ searchParams }: BatchPageProps) {
   ]);
 
   return (
-    <BatchDashboard
-      filters={filters}
-      initialOrders={orders}
-      stores={stores}
-    />
+    <ClientErrorBoundary
+      description="The batch dashboard hit a client-side problem while tracking selection, countdown, or realtime state."
+      homeHref="/batch"
+      title="Batch dashboard needs recovery"
+    >
+      <BatchDashboard
+        filters={filters}
+        initialOrders={orders}
+        stores={stores}
+      />
+    </ClientErrorBoundary>
   );
 }
