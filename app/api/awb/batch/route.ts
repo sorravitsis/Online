@@ -1,4 +1,6 @@
 import { failure, success } from "@/lib/api";
+import { getSelectionLimit } from "@/lib/batch";
+import { getOrdersByIds } from "@/lib/orders";
 import { processBatchOrderPrint } from "@/lib/print-workflow";
 
 export async function POST(request: Request) {
@@ -9,7 +11,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await processBatchOrderPrint(body.orderIds, "app-session");
+    const orderIds = [...new Set(body.orderIds)];
+    const orders = await getOrdersByIds(orderIds);
+    const maxAllowed = getSelectionLimit(
+      orders.map((order) => order.store_id),
+      orders.flatMap((order) => (order.store ? [order.store] : []))
+    );
+
+    if (orderIds.length > maxAllowed) {
+      return failure("batch_limit_exceeded", 409);
+    }
+
+    const result = await processBatchOrderPrint(orderIds, "app-session");
     return success(result);
   } catch (error) {
     return failure(
