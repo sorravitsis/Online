@@ -1,3 +1,4 @@
+import { isValidBatchLimit } from "@/lib/admin";
 import { failure, success } from "@/lib/api";
 import { createAdminClient } from "@/lib/supabase";
 
@@ -38,6 +39,10 @@ export async function PATCH(request: Request) {
   const updates: Record<string, unknown> = {};
 
   if (typeof body.batch_limit === "number") {
+    if (!isValidBatchLimit(body.batch_limit)) {
+      return failure("invalid_batch_limit", 400);
+    }
+
     updates.batch_limit = body.batch_limit;
   }
 

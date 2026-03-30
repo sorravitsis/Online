@@ -18,6 +18,10 @@ const tests = [
   {
     name: "batch helpers",
     run: require("./batch.test.cjs").run
+  },
+  {
+    name: "admin helpers",
+    run: require("./admin.test.cjs").run
   }
 ];
 
