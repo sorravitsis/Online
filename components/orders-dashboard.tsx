@@ -1,0 +1,367 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { createBrowserClient } from "@/lib/supabase";
+import { buildOrderSearchParams, normalizeOrderFilters, type OrderFilters } from "@/lib/order-filters";
+import { formatOrderStatus } from "@/lib/format";
+import type { OrderWithStore, StoreRow } from "@/lib/types";
+
+type OrdersDashboardProps = {
+  initialOrders: OrderWithStore[];
+  initialTotal: number;
+  initialPage: number;
+  pageSize: number;
+  stores: StoreRow[];
+  filters: OrderFilters;
+};
+
+type OrdersApiResponse = {
+  success: boolean;
+  data?: {
+    orders: OrderWithStore[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+  error?: string;
+};
+
+function badgeClasses(status: string) {
+  switch (status) {
+    case "pending":
+      return "bg-amber-100 text-amber-700";
+    case "printing":
+      return "bg-blue-100 text-blue-700";
+    case "printed":
+      return "bg-emerald-100 text-emerald-700";
+    case "failed":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
+export function OrdersDashboard({
+  initialOrders,
+  initialTotal,
+  initialPage,
+  pageSize,
+  stores,
+  filters
+}: OrdersDashboardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [orders, setOrders] = useState(initialOrders);
+  const [total, setTotal] = useState(initialTotal);
+  const [page, setPage] = useState(initialPage);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  const [isPending, startTransition] = useTransition();
+  const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setOrders(initialOrders);
+    setTotal(initialTotal);
+    setPage(initialPage);
+    setDraftFilters(filters);
+  }, [filters, initialOrders, initialPage, initialTotal]);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    const channel = supabase
+      .channel("orders-dashboard-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders"
+        },
+        (payload) => {
+          const record = (payload.new as { id?: string } | null) ?? (payload.old as { id?: string } | null);
+          const changedId = record?.id;
+
+          if (changedId) {
+            setFlashOrderId(changedId);
+            if (flashTimeoutRef.current) {
+              clearTimeout(flashTimeoutRef.current);
+            }
+
+            flashTimeoutRef.current = setTimeout(() => {
+              setFlashOrderId(null);
+            }, 2200);
+          }
+
+          startTransition(() => {
+            router.refresh();
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (flashTimeoutRef.current) {
+        clearTimeout(flashTimeoutRef.current);
+      }
+
+      void supabase.removeChannel(channel);
+    };
+  }, [router]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / pageSize)),
+    [pageSize, total]
+  );
+
+  function navigate(nextFilters: OrderFilters) {
+    const normalized = normalizeOrderFilters(nextFilters);
+    const search = buildOrderSearchParams(normalized).toString();
+
+    startTransition(() => {
+      router.replace(`${pathname}?${search}`, { scroll: false });
+    });
+  }
+
+  function handleFilterSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    navigate({
+      ...draftFilters,
+      page: 1
+    });
+  }
+
+  function handlePageChange(nextPage: number) {
+    navigate({
+      ...filters,
+      page: nextPage
+    });
+  }
+
+  return (
+    <main className="min-h-screen px-6 py-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="flex flex-col gap-4 rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/70">
+                Warehouse Dashboard
+              </p>
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Realtime connected
+              </span>
+            </div>
+            <h1 className="text-3xl font-semibold text-brand-ink">
+              AWB order queue
+            </h1>
+            <p className="text-sm text-slate-600">
+              Filter by store, status, or work date, then let realtime keep the
+              queue in sync while the team prints.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/scan"
+              className="rounded-full bg-brand-blue px-5 py-3 text-sm font-medium text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+            >
+              Scan Mode
+            </Link>
+            <Link
+              href="/batch"
+              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Batch Print
+            </Link>
+            <Link
+              href="/admin"
+              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Admin
+            </Link>
+          </div>
+        </header>
+
+        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <form className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Status
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    status: event.target.value
+                  }))
+                }
+                value={draftFilters.status}
+              >
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="printing">Printing</option>
+                <option value="printed">Printed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Store
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    storeId: event.target.value || undefined
+                  }))
+                }
+                value={draftFilters.storeId ?? ""}
+              >
+                <option value="">All stores</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Work date
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    date: event.target.value
+                  }))
+                }
+                type="date"
+                value={draftFilters.date}
+              />
+            </label>
+
+            <div className="flex items-end gap-3">
+              <button
+                className="rounded-full bg-brand-ink px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                disabled={isPending}
+                type="submit"
+              >
+                {isPending ? "Refreshing..." : "Apply filters"}
+              </button>
+              <button
+                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
+                onClick={() =>
+                  setDraftFilters(
+                    normalizeOrderFilters({
+                      limit: pageSize
+                    })
+                  )
+                }
+                type="button"
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-brand-ink">Orders</h2>
+              <p className="text-sm text-slate-500">
+                Showing page {page} of {totalPages} with {total} matching orders
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-500">
+              <span>{isPending ? "Updating list..." : "Live queue ready"}</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead>
+                <tr className="text-left text-slate-500">
+                  <th className="px-3 py-3 font-medium">Order ID</th>
+                  <th className="px-3 py-3 font-medium">Store</th>
+                  <th className="px-3 py-3 font-medium">Buyer</th>
+                  <th className="px-3 py-3 font-medium">Items</th>
+                  <th className="px-3 py-3 font-medium">Status</th>
+                  <th className="px-3 py-3 font-medium">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-8 text-center text-slate-500" colSpan={6}>
+                      No orders found for the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className={`align-top transition ${flashOrderId === order.id ? "order-row-flash" : ""}`}
+                    >
+                      <td className="px-3 py-4 font-medium text-brand-ink">
+                        {order.platform_order_id}
+                      </td>
+                      <td className="px-3 py-4 text-slate-600">
+                        {order.store?.name ?? "Unknown store"}
+                      </td>
+                      <td className="px-3 py-4 text-slate-600">
+                        {order.buyer_name ?? "-"}
+                      </td>
+                      <td className="px-3 py-4 text-slate-600">
+                        {Array.isArray(order.items_json)
+                          ? order.items_json.length
+                          : 0}{" "}
+                        items
+                      </td>
+                      <td className="px-3 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${badgeClasses(order.awb_status)}`}
+                        >
+                          {formatOrderStatus(order.awb_status)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-4 text-slate-500">
+                        {new Date(order.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-500">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex gap-3">
+              <button
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page <= 1 || isPending}
+                onClick={() => handlePageChange(page - 1)}
+                type="button"
+              >
+                Previous
+              </button>
+              <button
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page >= totalPages || isPending}
+                onClick={() => handlePageChange(page + 1)}
+                type="button"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
