@@ -65,6 +65,8 @@ Optional overrides:
 - `vercel.json` schedules `/api/cron/cleanup-locks` every 5 minutes
 - set `CRON_SECRET` in Vercel so cleanup is protected in production
 - add the same runtime env vars in Vercel and Supabase before go-live
+- follow [docs/go-live-checklist.md](./docs/go-live-checklist.md) during production rollout
+- use [supabase/seeds/store-onboarding-template.sql](./supabase/seeds/store-onboarding-template.sql) as the starting SQL for each real store
 
 ## Still Requires Real-World Validation
 

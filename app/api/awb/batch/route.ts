@@ -1,3 +1,4 @@
+import { getCurrentSession, getSessionIdentifier } from "@/lib/auth";
 import { failure, success } from "@/lib/api";
 import { getSelectionLimit } from "@/lib/batch";
 import { getOrdersByIds } from "@/lib/orders";
@@ -17,6 +18,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const session = await getCurrentSession();
+    if (!session) {
+      return failure("unauthorized", 401);
+    }
+
     const orderIds = [...new Set(body.orderIds)];
     const orders = await getOrdersByIds(orderIds);
     const maxAllowed = getSelectionLimit(
@@ -28,7 +34,10 @@ export async function POST(request: Request) {
       return failure("batch_limit_exceeded", 409);
     }
 
-    const result = await processBatchOrderPrint(orderIds, "app-session");
+    const result = await processBatchOrderPrint(
+      orderIds,
+      getSessionIdentifier(session)
+    );
     return success(result);
   } catch (error) {
     return failure(

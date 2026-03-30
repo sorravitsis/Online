@@ -1,3 +1,4 @@
+import { getCurrentSession, getSessionIdentifier } from "@/lib/auth";
 import { failure, success } from "@/lib/api";
 import { processSingleOrderPrint } from "@/lib/print-workflow";
 
@@ -15,7 +16,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await processSingleOrderPrint(body.orderId, "app-session");
+    const session = await getCurrentSession();
+    if (!session) {
+      return failure("unauthorized", 401);
+    }
+
+    const result = await processSingleOrderPrint(
+      body.orderId,
+      getSessionIdentifier(session)
+    );
 
     if (result.status === "failed") {
       const status =
