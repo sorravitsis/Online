@@ -14,6 +14,10 @@ const tests = [
   {
     name: "scan helpers",
     run: require("./scan.test.cjs").run
+  },
+  {
+    name: "batch helpers",
+    run: require("./batch.test.cjs").run
   }
 ];
 

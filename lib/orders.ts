@@ -66,3 +66,21 @@ export async function getOrderById(orderId: string) {
 
   return data as OrderWithStore;
 }
+
+export async function getOrdersByIds(orderIds: string[]) {
+  if (orderIds.length === 0) {
+    return [];
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, store:stores(*)")
+    .in("id", orderIds);
+
+  if (error) {
+    throw new Error(`Unable to load orders by ids: ${error.message}`);
+  }
+
+  return (data ?? []) as OrderWithStore[];
+}
