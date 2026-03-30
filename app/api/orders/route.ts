@@ -4,10 +4,11 @@ import { listOrders } from "@/lib/orders";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const barcode = searchParams.get("barcode") ?? undefined;
 
   try {
     const filters = normalizeOrderFilters({
-      status: searchParams.get("status") ?? undefined,
+      status: searchParams.get("status") ?? (barcode ? "all" : undefined),
       storeId: searchParams.get("store_id") ?? undefined,
       date: searchParams.get("date") ?? undefined,
       page: searchParams.get("page")
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
 
     const data = await listOrders({
       ...filters,
-      barcode: searchParams.get("barcode") ?? undefined,
+      barcode,
     });
 
     return success(data);
