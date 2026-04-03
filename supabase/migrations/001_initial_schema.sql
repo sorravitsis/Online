@@ -84,7 +84,7 @@ CREATE TABLE app_config (
 -- Insert default password hash for 'changeme'
 -- IMPORTANT: change this immediately after first login
 INSERT INTO app_config (key, value) VALUES
-  ('admin_password_hash', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+  ('admin_password_hash', 'REDACTED');
 -- ^ bcrypt hash of 'changeme' — replace via Admin UI after setup
 
 -- ─────────────────────────────────────────
