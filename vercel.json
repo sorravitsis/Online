@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/cleanup-locks",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}

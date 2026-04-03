@@ -16,7 +16,9 @@ Use this checklist after the repo is deployed and connected to real services.
 - add all env vars from `.env.example`
 - set `CRON_SECRET`
 - deploy `main`
-- confirm `/api/cron/cleanup-locks` is scheduled from `vercel.json`
+- if you are on Vercel Hobby, do not use Vercel Cron for cleanup
+- if you are on Vercel Hobby, create an `n8n` workflow that calls `/api/cron/cleanup-locks` every 5 minutes with `Authorization: Bearer <CRON_SECRET>`
+- if you are on Vercel Pro or above, you may reintroduce a native cron schedule later
 
 ## 3. n8n
 
@@ -24,6 +26,7 @@ Use this checklist after the repo is deployed and connected to real services.
 - confirm sync is writing `READY_TO_SHIP` orders into `orders`
 - validate `barcode_value` matches the physical scanner output
 - repeat for each production Shopee store before go-live
+- create a second workflow for stale lock cleanup that calls `GET /api/cron/cleanup-locks`
 
 ## 4. Printer
 
