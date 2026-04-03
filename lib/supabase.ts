@@ -1,6 +1,6 @@
 import type { CookieOptions } from "@supabase/ssr";
 import { createServerClient as createSSRServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 
 export async function createServerClient() {
@@ -29,6 +29,15 @@ export async function createServerClient() {
 
 export function createBrowserClient() {
   return createClient(env.supabase.url(), env.supabase.anonKey());
+}
+
+export function tryCreateBrowserClient() {
+  try {
+    return createBrowserClient();
+  } catch (error) {
+    console.error("Unable to create Supabase browser client", error);
+    return null as SupabaseClient | null;
+  }
 }
 
 export function createAdminClient() {

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSelectionLimit, mapBatchError, summarizeBatchResults } from "@/lib/batch";
 import { buildOrderSearchParams, normalizeOrderFilters, type OrderFilters } from "@/lib/order-filters";
 import { summarizeItems } from "@/lib/scan";
-import { createBrowserClient } from "@/lib/supabase";
+import { tryCreateBrowserClient } from "@/lib/supabase";
 import type { OrderWithStore, PrintResult, StoreRow } from "@/lib/types";
 
 type BatchDashboardProps = {
@@ -45,6 +45,7 @@ export function BatchDashboard({
   const [error, setError] = useState<string | null>(null);
   const [processedIds, setProcessedIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,7 +58,12 @@ export function BatchDashboard({
   }, [filters, initialOrders]);
 
   useEffect(() => {
-    const supabase = createBrowserClient();
+    const supabase = tryCreateBrowserClient();
+    if (!supabase) {
+      setRealtimeEnabled(false);
+      return;
+    }
+
     const channel = supabase
       .channel("batch-dashboard-realtime")
       .on(
@@ -96,7 +102,13 @@ export function BatchDashboard({
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setRealtimeEnabled(false);
+        }
+      });
+
+    setRealtimeEnabled(true);
 
     return () => {
       if (countdownIntervalRef.current) {
@@ -269,6 +281,15 @@ export function BatchDashboard({
             >
               Back to queue
             </Link>
+            <span
+              className={`inline-flex items-center rounded-full px-4 py-3 text-sm font-medium ${
+                realtimeEnabled
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {realtimeEnabled ? "Realtime on" : "Manual refresh mode"}
+            </span>
           </div>
         </header>
 
