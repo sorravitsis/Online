@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createBrowserClient } from "@/lib/supabase";
+import { tryCreateBrowserClient } from "@/lib/supabase";
 import { buildOrderSearchParams, normalizeOrderFilters, type OrderFilters } from "@/lib/order-filters";
 import { formatOrderStatus } from "@/lib/format";
 import type { OrderWithStore, StoreRow } from "@/lib/types";
@@ -27,7 +27,6 @@ type OrdersApiResponse = {
   };
   error?: string;
 };
-
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
@@ -59,6 +58,7 @@ export function OrdersDashboard({
   const [draftFilters, setDraftFilters] = useState(filters);
   const [isPending, startTransition] = useTransition();
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -69,7 +69,12 @@ export function OrdersDashboard({
   }, [filters, initialOrders, initialPage, initialTotal]);
 
   useEffect(() => {
-    const supabase = createBrowserClient();
+    const supabase = tryCreateBrowserClient();
+    if (!supabase) {
+      setRealtimeEnabled(false);
+      return;
+    }
+
     const channel = supabase
       .channel("orders-dashboard-realtime")
       .on(
@@ -99,7 +104,13 @@ export function OrdersDashboard({
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setRealtimeEnabled(false);
+        }
+      });
+
+    setRealtimeEnabled(true);
 
     return () => {
       if (flashTimeoutRef.current) {
@@ -148,9 +159,19 @@ export function OrdersDashboard({
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/70">
                 Warehouse Dashboard
               </p>
-              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Realtime connected
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                  realtimeEnabled
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    realtimeEnabled ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
+                />
+                {realtimeEnabled ? "Realtime connected" : "Realtime unavailable"}
               </span>
             </div>
             <h1 className="text-3xl font-semibold text-brand-ink">
@@ -276,7 +297,13 @@ export function OrdersDashboard({
               </p>
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-500">
-              <span>{isPending ? "Updating list..." : "Live queue ready"}</span>
+              <span>
+                {isPending
+                  ? "Updating list..."
+                  : realtimeEnabled
+                    ? "Live queue ready"
+                    : "Manual refresh mode"}
+              </span>
             </div>
           </div>
 
