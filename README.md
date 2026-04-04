@@ -68,6 +68,41 @@ Optional overrides:
 - follow [docs/go-live-checklist.md](./docs/go-live-checklist.md) during production rollout
 - use [supabase/seeds/store-onboarding-template.sql](./supabase/seeds/store-onboarding-template.sql) as the starting SQL for each real store
 
+## Local Queue Mode For USB Printers
+
+Use this mode when the warehouse printer is attached to a Windows PC by USB and cannot accept raw TCP ZPL from Vercel.
+
+1. Run [supabase/migrations/002_print_jobs_queue.sql](./supabase/migrations/002_print_jobs_queue.sql) in Supabase.
+2. Set `PRINT_TRANSPORT=local_queue` in Vercel.
+3. Push and redeploy `main`.
+4. On the warehouse Windows PC, pull the repo and run:
+
+```bash
+npm install
+npm run print:agent
+```
+
+Recommended agent env vars on the warehouse PC:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `PRINT_TRANSPORT=local_queue`
+- `LOCAL_PRINT_AGENT_NAME=warehouse-deli-01`
+- `LOCAL_PRINTER_NAME=<Windows printer name>`
+- `PRINT_AGENT_INTERVAL_MS=3000`
+
+Optional PDF printing env vars:
+
+- `SUMATRA_PDF_PATH=C:\\Path\\To\\SumatraPDF.exe`
+- `PDF_PRINT_COMMAND=<custom PowerShell command with {file} and {printer}>`
+
+Behavior in local queue mode:
+
+- the web app still acquires the order lock and generates the AWB
+- the app stores a `print_jobs` row and keeps the order in `printing`
+- the local Windows agent claims the job, prints it through the local driver, and finalizes `orders` + `print_log`
+- failed local prints move the order to `failed` without marking it as printed
+
 ## Still Requires Real-World Validation
 
 These steps cannot be completed from the repo alone:

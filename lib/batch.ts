@@ -45,10 +45,12 @@ export function mapBatchError(error?: string) {
 
 export function summarizeBatchResults(results: PrintResult[]) {
   const printed = results.filter((result) => result.status === "printed").length;
-  const failed = results.length - printed;
+  const queued = results.filter((result) => result.status === "queued").length;
+  const failed = results.filter((result) => result.status === "failed").length;
 
   return {
     printed,
+    queued,
     failed
   };
 }

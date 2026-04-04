@@ -27,7 +27,8 @@ export const env = {
   },
   printer: {
     host: () => requireEnv("PRINTER_HOST"),
-    port: () => Number.parseInt(optionalEnv("PRINTER_PORT", "9100") ?? "9100", 10)
+    port: () => Number.parseInt(optionalEnv("PRINTER_PORT", "9100") ?? "9100", 10),
+    transport: () => optionalEnv("PRINT_TRANSPORT", "direct_tcp") as "direct_tcp" | "local_queue"
   },
   shopee: {
     appId: () => requireEnv("SHOPEE_APP_ID"),

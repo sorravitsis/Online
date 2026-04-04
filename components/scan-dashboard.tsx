@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { mapScanError, summarizeItems } from "@/lib/scan";
+import { mapScanError, mapScanSuccess, summarizeItems } from "@/lib/scan";
 import type { OrderWithStore } from "@/lib/types";
 
 type ScanResult =
   | { kind: "idle" }
-  | { kind: "success"; awbNumber: string; order: OrderWithStore }
+  | { kind: "success"; awbNumber: string; order: OrderWithStore; status: "printed" | "queued" }
   | { kind: "error"; message: string };
 
 export function ScanDashboard() {
@@ -73,7 +73,8 @@ export function ScanDashboard() {
       setResult({
         kind: "success",
         awbNumber: json.data.awbNumber as string,
-        order
+        order,
+        status: (json.data.status as "printed" | "queued") ?? "printed"
       });
       setBarcode("");
     } catch (error) {
@@ -273,10 +274,12 @@ export function ScanDashboard() {
             {result.kind === "success" ? (
               <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
                 <p className="text-sm font-medium text-brand-green">
-                  Print succeeded. AWB: {result.awbNumber}
+                  {mapScanSuccess(result.status, result.awbNumber)}
                 </p>
                 <p className="mt-2 text-sm text-emerald-800">
-                  {result.order.platform_order_id} is ready for packing.
+                  {result.status === "queued"
+                    ? `${result.order.platform_order_id} is waiting for the local printer agent.`
+                    : `${result.order.platform_order_id} is ready for packing.`}
                 </p>
               </div>
             ) : null}

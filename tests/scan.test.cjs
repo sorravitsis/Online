@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 
-const { mapScanError, summarizeItems } = require("../lib/scan.ts");
+const { mapScanError, mapScanSuccess, summarizeItems } = require("../lib/scan.ts");
 
 async function run() {
   assert.equal(
@@ -10,6 +10,10 @@ async function run() {
   assert.equal(
     mapScanError("locked"),
     "This order is locked by another session right now."
+  );
+  assert.equal(
+    mapScanSuccess("queued", "AWB123"),
+    "Print queued. AWB: AWB123. The warehouse print agent will complete it shortly."
   );
   assert.equal(
     summarizeItems([{ name: "SKU 1" }, { name: "SKU 2" }, { name: "SKU 3" }]),
