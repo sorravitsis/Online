@@ -16,6 +16,10 @@ const tests = [
     run: require("./scan.test.cjs").run
   },
   {
+    name: "labelary helpers",
+    run: require("./labelary.test.cjs").run
+  },
+  {
     name: "shopee adapter helpers",
     run: require("./shopee-adapter.test.cjs").run
   },
