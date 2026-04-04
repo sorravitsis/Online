@@ -43,7 +43,8 @@ export async function POST(request: Request) {
 
     return success({
       awbNumber: result.awbNumber,
-      orderId: result.orderId
+      orderId: result.orderId,
+      status: result.status
     });
   } catch (error) {
     return failure(

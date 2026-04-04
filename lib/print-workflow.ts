@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { env } from "@/lib/env";
+import { detectPrintableDocumentType } from "@/lib/print-documents";
+import { enqueuePrintJob } from "@/lib/print-jobs";
 import { addSeconds } from "@/lib/time";
 import { generateAWB } from "@/lib/awb";
 import { convertPdfToZpl } from "@/lib/labelary";
@@ -29,6 +32,8 @@ export type PrintWorkflowDependencies = {
     awbNumber?: string;
     error?: string;
   }) => Promise<void>;
+  enqueuePrintJob: typeof enqueuePrintJob;
+  getPrintTransport: () => "direct_tcp" | "local_queue";
   generateAWB: typeof generateAWB;
   convertPdfToZpl: typeof convertPdfToZpl;
   printZPL: typeof printZPL;
@@ -116,10 +121,50 @@ const defaultDependencies: PrintWorkflowDependencies = {
   releaseLock,
   setOrderStatus,
   insertPrintLog,
+  enqueuePrintJob,
+  getPrintTransport: () => env.printer.transport(),
   generateAWB,
   convertPdfToZpl,
   printZPL
 };
+
+async function executeDirectPrint(
+  awb: Awaited<ReturnType<typeof generateAWB>>,
+  dependencies: PrintWorkflowDependencies
+) {
+  const documentType = detectPrintableDocumentType(awb.pdf);
+
+  if (documentType === "zpl") {
+    await dependencies.printZPL(awb.pdf.toString("utf8"));
+    return;
+  }
+
+  const zpl = await dependencies.convertPdfToZpl(awb.pdf);
+  await dependencies.printZPL(zpl);
+}
+
+async function queuePrintJob(
+  orderId: string,
+  batchId: string | null,
+  batchSize: number | null,
+  printedBy: string,
+  mode: PrintMode,
+  awb: Awaited<ReturnType<typeof generateAWB>>,
+  dependencies: PrintWorkflowDependencies
+) {
+  const documentType = detectPrintableDocumentType(awb.pdf);
+
+  await dependencies.enqueuePrintJob({
+    orderId,
+    batchId,
+    batchSize,
+    awbNumber: awb.awbNumber,
+    mode,
+    printedBy,
+    documentType,
+    documentBuffer: awb.pdf
+  });
+}
 
 export async function processSingleOrderPrint(
   orderId: string,
@@ -167,8 +212,17 @@ export async function processSingleOrderPrint(
     });
 
     const awb = await dependencies.generateAWB(order);
-    const zpl = await dependencies.convertPdfToZpl(awb.pdf);
-    await dependencies.printZPL(zpl);
+    if (dependencies.getPrintTransport() === "local_queue") {
+      await queuePrintJob(order.id, null, null, printedBy, "1to1", awb, dependencies);
+
+      return {
+        orderId: order.id,
+        status: "queued",
+        awbNumber: awb.awbNumber
+      };
+    }
+
+    await executeDirectPrint(awb, dependencies);
     await dependencies.setOrderStatus(order.id, {
       awb_status: "printed",
       awb_number: awb.awbNumber,
@@ -253,37 +307,55 @@ export async function processBatchOrderPrint(
       continue;
     }
 
-    try {
-      await dependencies.setOrderStatus(order.id, {
-        awb_status: "printing"
-      });
+      try {
+        await dependencies.setOrderStatus(order.id, {
+          awb_status: "printing"
+        });
 
-      const awb = await dependencies.generateAWB(order);
-      const zpl = await dependencies.convertPdfToZpl(awb.pdf);
-      await dependencies.printZPL(zpl);
-      await dependencies.setOrderStatus(order.id, {
-        awb_status: "printed",
-        awb_number: awb.awbNumber,
-        printed_at: new Date().toISOString()
-      });
-      await dependencies.insertPrintLog({
-        orderId: order.id,
-        batchId,
-        batchSize: orderIds.length,
-        printedBy,
-        mode: "batch",
-        status: "printed",
-        awbNumber: awb.awbNumber
-      });
+        const awb = await dependencies.generateAWB(order);
+        if (dependencies.getPrintTransport() === "local_queue") {
+          await queuePrintJob(
+            order.id,
+            batchId,
+            orderIds.length,
+            printedBy,
+            "batch",
+            awb,
+            dependencies
+          );
 
-      results.push({
-        orderId: order.id,
-        status: "printed",
-        awbNumber: awb.awbNumber
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "print_failed";
-      await dependencies.setOrderStatus(order.id, {
+          results.push({
+            orderId: order.id,
+            status: "queued",
+            awbNumber: awb.awbNumber
+          });
+          continue;
+        }
+
+        await executeDirectPrint(awb, dependencies);
+        await dependencies.setOrderStatus(order.id, {
+          awb_status: "printed",
+          awb_number: awb.awbNumber,
+          printed_at: new Date().toISOString()
+        });
+        await dependencies.insertPrintLog({
+          orderId: order.id,
+          batchId,
+          batchSize: orderIds.length,
+          printedBy,
+          mode: "batch",
+          status: "printed",
+          awbNumber: awb.awbNumber
+        });
+
+        results.push({
+          orderId: order.id,
+          status: "printed",
+          awbNumber: awb.awbNumber
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "print_failed";
+        await dependencies.setOrderStatus(order.id, {
         awb_status: "failed"
       });
       await dependencies.insertPrintLog({

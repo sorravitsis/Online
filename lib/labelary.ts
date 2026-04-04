@@ -1,22 +1,5 @@
 import { env } from "@/lib/env";
-
-function isPdfBuffer(buffer: Buffer) {
-  return buffer.subarray(0, 5).toString("utf8") === "%PDF-";
-}
-
-function tryReadZpl(buffer: Buffer) {
-  const text = buffer.toString("utf8").trim();
-
-  if (!text) {
-    return null;
-  }
-
-  if (text.startsWith("^XA") || text.startsWith("~JA") || text.includes("^XZ")) {
-    return text;
-  }
-
-  return null;
-}
+import { isPdfBuffer, tryReadZpl } from "@/lib/print-documents";
 
 export async function convertPdfToZpl(pdf: Buffer) {
   const rawZpl = tryReadZpl(pdf);

@@ -23,10 +23,12 @@ async function run() {
   assert.deepEqual(
     summarizeBatchResults([
       { orderId: "1", status: "printed" },
+      { orderId: "3", status: "queued" },
       { orderId: "2", status: "failed", error: "locked" }
     ]),
     {
       printed: 1,
+      queued: 1,
       failed: 1
     }
   );

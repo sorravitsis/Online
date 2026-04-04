@@ -19,6 +19,14 @@ export function mapScanError(error?: string) {
   }
 }
 
+export function mapScanSuccess(status: "printed" | "queued", awbNumber: string) {
+  if (status === "queued") {
+    return `Print queued. AWB: ${awbNumber}. The warehouse print agent will complete it shortly.`;
+  }
+
+  return `Print succeeded. AWB: ${awbNumber}`;
+}
+
 export function summarizeItems(items: unknown) {
   if (!Array.isArray(items) || items.length === 0) {
     return "No item details";

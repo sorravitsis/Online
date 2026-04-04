@@ -47,6 +47,8 @@ function makeDependencies() {
     releaseLock: createStub(async () => undefined),
     setOrderStatus: createStub(async () => undefined),
     insertPrintLog: createStub(async () => undefined),
+    enqueuePrintJob: createStub(async () => ({ id: "job-1" })),
+    getPrintTransport: () => "direct_tcp",
     generateAWB: createStub(async () => ({
       pdf: Buffer.from("pdf"),
       awbNumber: "AWB123"
@@ -67,6 +69,23 @@ async function run() {
     assert.deepEqual(dependencies.printZPL.calls[0], ["^XA^XZ"]);
     assert.equal(dependencies.insertPrintLog.calls[0][0].status, "printed");
     assert.equal(dependencies.insertPrintLog.calls[0][0].awbNumber, "AWB123");
+    assert.deepEqual(dependencies.releaseLock.calls[0], ["order-1"]);
+  }
+
+  {
+    const dependencies = makeDependencies();
+    dependencies.getPrintTransport = () => "local_queue";
+    const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
+
+    assert.equal(result.status, "queued");
+    assert.equal(dependencies.enqueuePrintJob.calls.length, 1);
+    assert.equal(dependencies.printZPL.calls.length, 0);
+    assert.equal(
+      dependencies.setOrderStatus.calls.some(
+        ([, payload]) => payload && payload.awb_status === "printed"
+      ),
+      false
+    );
     assert.deepEqual(dependencies.releaseLock.calls[0], ["order-1"]);
   }
 

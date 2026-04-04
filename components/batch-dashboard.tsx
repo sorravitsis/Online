@@ -509,7 +509,7 @@ export function BatchDashboard({
             <div>
               <h2 className="text-lg font-semibold text-brand-ink">Batch summary</h2>
               <p className="text-sm text-slate-500">
-                Printed {summary.printed}, failed {summary.failed}
+                Printed {summary.printed}, queued {summary.queued}, failed {summary.failed}
               </p>
             </div>
           </div>
@@ -530,6 +530,8 @@ export function BatchDashboard({
                     <p className="mt-1 text-slate-600">
                       {result.status === "printed"
                         ? `Printed successfully${result.awbNumber ? `, AWB ${result.awbNumber}` : ""}`
+                        : result.status === "queued"
+                          ? `Queued for local printing${result.awbNumber ? `, AWB ${result.awbNumber}` : ""}`
                         : mapBatchError(result.error)}
                     </p>
                   </div>
@@ -537,6 +539,8 @@ export function BatchDashboard({
                     className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
                       result.status === "printed"
                         ? "bg-emerald-100 text-emerald-700"
+                        : result.status === "queued"
+                          ? "bg-amber-100 text-amber-700"
                         : "bg-red-100 text-red-700"
                     }`}
                   >
