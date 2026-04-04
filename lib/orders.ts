@@ -29,7 +29,9 @@ export async function listOrders(filters: ListOrdersFilters) {
   }
 
   if (filters.barcode) {
-    query = query.eq("barcode_value", filters.barcode);
+    query = query.or(
+      `barcode_value.eq.${filters.barcode},platform_order_id.eq.${filters.barcode}`
+    );
   }
 
   if (filters.date) {

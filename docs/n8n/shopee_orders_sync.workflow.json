@@ -1,0 +1,305 @@
+{
+  "name": "shopee_orders_sync",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0f7d6263-91ce-4683-89f4-e5f7ff58ddce",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "ee4d4c1b-7ff7-4e60-a5fb-2c1f1d0db7cf",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f2ddbb95-e6c9-4a68-ae90-5b9292c2435d",
+              "name": "partnerId",
+              "type": "string",
+              "value": "2014527"
+            },
+            {
+              "id": "baf985c4-a4dd-4c43-a9a3-c0246be6a8fa",
+              "name": "partnerKey",
+              "type": "string",
+              "value": "REPLACE_WITH_SHOPEE_APP_KEY"
+            },
+            {
+              "id": "4ec42479-0d75-4c2e-b0eb-f7b0c06a22ff",
+              "name": "shopId",
+              "type": "string",
+              "value": "95300527"
+            },
+            {
+              "id": "254cf69d-b9ab-4302-87ff-c34291a5f0dc",
+              "name": "accessToken",
+              "type": "string",
+              "value": "REPLACE_WITH_SHOPEE_ACCESS_TOKEN"
+            },
+            {
+              "id": "7ca61ce0-2608-4c58-a0cd-0c0125235a78",
+              "name": "storeId",
+              "type": "string",
+              "value": "61c0568a-a01b-4ad8-8ee4-f9dbb363a1fb"
+            },
+            {
+              "id": "7d61a0ca-4827-4bd4-b36f-c4b4e46c4b34",
+              "name": "supabaseUrl",
+              "type": "string",
+              "value": "https://blmunscozzxxoefrdydg.supabase.co"
+            },
+            {
+              "id": "ce5c3713-01a9-439f-a2b5-bda4d193d4cf",
+              "name": "serviceRoleKey",
+              "type": "string",
+              "value": "REPLACE_WITH_SUPABASE_SERVICE_ROLE_KEY"
+            },
+            {
+              "id": "f2e30d26-8d38-4ce3-9d51-a8bc1a33f440",
+              "name": "lookbackDays",
+              "type": "string",
+              "value": "3"
+            }
+          ]
+        }
+      },
+      "id": "85bdc69b-5141-4ed9-83a9-6fb1518bd303",
+      "name": "Workflow Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -848,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function rightRotate(value, amount) {\n  return (value >>> amount) | (value << (32 - amount));\n}\n\nfunction sha256(ascii) {\n  const mathPow = Math.pow;\n  const maxWord = mathPow(2, 32);\n  let result = '';\n\n  const words = [];\n  const asciiBitLength = ascii.length * 8;\n\n  let hash = [];\n  let k = [];\n  let primeCounter = 0;\n\n  const isComposite = {};\n  for (let candidate = 2; primeCounter < 64; candidate++) {\n    if (!isComposite[candidate]) {\n      for (let i = 0; i < 313; i += candidate) {\n        isComposite[i] = candidate;\n      }\n      hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;\n      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;\n    }\n  }\n\n  ascii += '\\x80';\n  while ((ascii.length % 64) - 56) ascii += '\\x00';\n  for (let i = 0; i < ascii.length; i++) {\n    const j = ascii.charCodeAt(i);\n    words[i >> 2] |= j << (((3 - i) % 4) * 8);\n  }\n  words[words.length] = (asciiBitLength / maxWord) | 0;\n  words[words.length] = asciiBitLength;\n\n  for (let j = 0; j < words.length;) {\n    const w = words.slice(j, (j += 16));\n    const oldHash = hash.slice(0);\n\n    for (let i = 0; i < 64; i++) {\n      const w15 = w[i - 15];\n      const w2 = w[i - 2];\n\n      const a = hash[0];\n      const e = hash[4];\n      const temp1 =\n        hash[7] +\n        (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +\n        ((e & hash[5]) ^ (~e & hash[6])) +\n        k[i] +\n        (w[i] =\n          i < 16\n            ? w[i]\n            : (w[i - 16] +\n                (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +\n                w[i - 7] +\n                (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) |\n              0);\n      const temp2 =\n        (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +\n        ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));\n\n      hash = [(temp1 + temp2) | 0].concat(hash);\n      hash[4] = (hash[4] + temp1) | 0;\n      hash.pop();\n    }\n\n    for (let i = 0; i < 8; i++) {\n      hash[i] = (hash[i] + oldHash[i]) | 0;\n    }\n  }\n\n  for (let i = 0; i < 8; i++) {\n    for (let j = 3; j + 1; j--) {\n      const b = (hash[i] >> (j * 8)) & 255;\n      result += ((b < 16 ? '0' : '') + b.toString(16));\n    }\n  }\n\n  return result;\n}\n\nfunction hexToBinary(hex) {\n  let output = '';\n  for (let i = 0; i < hex.length; i += 2) {\n    output += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));\n  }\n  return output;\n}\n\nfunction hmacSha256(key, message) {\n  const blockSize = 64;\n  let normalizedKey = key;\n\n  if (normalizedKey.length > blockSize) {\n    normalizedKey = hexToBinary(sha256(normalizedKey));\n  }\n\n  if (normalizedKey.length < blockSize) {\n    normalizedKey = normalizedKey.padEnd(blockSize, '\\x00');\n  }\n\n  let oKeyPad = '';\n  let iKeyPad = '';\n\n  for (let i = 0; i < blockSize; i++) {\n    const code = normalizedKey.charCodeAt(i);\n    oKeyPad += String.fromCharCode(code ^ 0x5c);\n    iKeyPad += String.fromCharCode(code ^ 0x36);\n  }\n\n  return sha256(oKeyPad + hexToBinary(sha256(iKeyPad + message)));\n}\n\nconst config = $input.first().json;\nconst path = '/api/v2/order/get_order_list';\nconst timestamp = Math.floor(Date.now() / 1000);\nconst lookbackDays = Number(config.lookbackDays || '3');\nconst timeTo = timestamp;\nconst timeFrom = timestamp - lookbackDays * 24 * 60 * 60;\nconst baseString = `${config.partnerId}${path}${timestamp}${config.accessToken}${config.shopId}`;\nconst sign = hmacSha256(config.partnerKey, baseString);\nconst requestUrl = `https://partner.shopeemobile.com${path}?partner_id=${encodeURIComponent(config.partnerId)}&timestamp=${timestamp}&access_token=${encodeURIComponent(config.accessToken)}&shop_id=${encodeURIComponent(config.shopId)}&sign=${sign}&time_range_field=update_time&time_from=${timeFrom}&time_to=${timeTo}&page_size=50`;\n\nreturn [\n  {\n    json: {\n      ...config,\n      path,\n      timestamp,\n      timeFrom,\n      timeTo,\n      sign,\n      requestUrl\n    }\n  }\n];"
+      },
+      "id": "89f1d44d-fd87-4347-bd17-6f17c1d6a0a8",
+      "name": "Build Shopee Order List URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.requestUrl }}",
+        "options": {}
+      },
+      "id": "343f8f65-70c2-4f40-9d4d-10934df7aefe",
+      "name": "Shopee Get Order List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -256,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "59247bcf-c2f8-409d-a80b-31980f9fcf6a",
+              "name": "storeId",
+              "type": "string",
+              "value": "={{ $('Workflow Config').item.json.storeId }}"
+            },
+            {
+              "id": "5da5fd66-9152-4509-9696-453a3bc7f2b1",
+              "name": "supabaseUrl",
+              "type": "string",
+              "value": "={{ $('Workflow Config').item.json.supabaseUrl }}"
+            },
+            {
+              "id": "f389ce69-492e-471e-bf3f-5d7326f757cd",
+              "name": "serviceRoleKey",
+              "type": "string",
+              "value": "={{ $('Workflow Config').item.json.serviceRoleKey }}"
+            }
+          ]
+        }
+      },
+      "id": "0d622070-c849-418a-a885-b8a9c7aa4c1a",
+      "name": "Attach Sync Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst orderList = input.response?.order_list ?? [];\n\nif (!Array.isArray(orderList) || orderList.length === 0) {\n  return [];\n}\n\nreturn orderList.map((order) => {\n  const body = {\n    store_id: input.storeId,\n    platform_order_id: order.order_sn,\n    barcode_value: order.order_sn,\n    buyer_name: order.buyer_username ?? null,\n    items_json: [],\n    awb_status: 'pending'\n  };\n\n  return {\n    json: {\n      ...body,\n      supabaseUrl: input.supabaseUrl,\n      serviceRoleKey: input.serviceRoleKey,\n      requestUrl: `${input.supabaseUrl}/rest/v1/orders?on_conflict=store_id,platform_order_id`,\n      requestBody: JSON.stringify(body)\n    }\n  };\n});"
+      },
+      "id": "e2b4f0c6-25df-4e0b-af05-f945dbf739ce",
+      "name": "Map Orders For Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "10fb4917-f55a-48f8-bb7e-662a1aff2a12",
+      "name": "Upsert Orders To Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Build Shopee Order List URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Shopee Order List URL": {
+      "main": [
+        [
+          {
+            "node": "Shopee Get Order List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shopee Get Order List": {
+      "main": [
+        [
+          {
+            "node": "Attach Sync Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Sync Config": {
+      "main": [
+        [
+          {
+            "node": "Map Orders For Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Orders For Supabase": {
+      "main": [
+        [
+          {
+            "node": "Upsert Orders To Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "d3c2e884-c846-4d39-a630-5077a5e6a618",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
