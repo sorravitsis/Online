@@ -134,11 +134,12 @@ export function ScanDashboard() {
               Scan Mode
             </p>
             <h1 className="text-3xl font-semibold text-brand-ink">
-              Barcode to print
+              Scan to print
             </h1>
             <p className="text-sm text-slate-600">
-              Keep the scanner pointed at the hidden capture field. Enter from
-              the scanner will trigger lookup and the 1:1 print path automatically.
+              Keep the scanner pointed at the hidden capture field. The scan
+              lookup accepts either the barcode field or the platform order ID,
+              then triggers the 1:1 print path automatically.
             </p>
           </div>
           <Link
@@ -252,7 +253,8 @@ export function ScanDashboard() {
               </div>
             ) : (
               <p className="mt-4 text-sm text-slate-500">
-                Scan a barcode to preview the order before print executes.
+                Scan a barcode or platform order ID to preview the order before
+                print executes.
               </p>
             )}
           </div>

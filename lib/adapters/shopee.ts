@@ -7,6 +7,18 @@ type ShopeeTokenSet = {
   refreshToken?: string | null;
 };
 
+class ShopeeHttpError extends Error {
+  status: number;
+  path: string;
+
+  constructor(path: string, status: number, message: string) {
+    super(message);
+    this.name = "ShopeeHttpError";
+    this.path = path;
+    this.status = status;
+  }
+}
+
 function signShopeeRequest(path: string, timestamp: number, accessToken?: string, shopId?: string) {
   const base = `${env.shopee.appId()}${path}${timestamp}${accessToken ?? ""}${shopId ?? ""}`;
   return crypto.createHmac("sha256", env.shopee.appKey()).update(base).digest("hex");
@@ -42,10 +54,69 @@ async function shopeeFetch<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`Shopee request failed with status ${response.status}.`);
+    const bodyText = await response.text();
+    throw new ShopeeHttpError(
+      path,
+      response.status,
+      `Shopee request failed with status ${response.status} on ${path}${
+        bodyText ? `: ${bodyText}` : "."
+      }`
+    );
   }
 
   return (await response.json()) as T;
+}
+
+type ShopeeRefreshResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  expire_in?: number;
+  response?: {
+    access_token?: string;
+    refresh_token?: string;
+    expire_in?: number;
+  };
+  error?: string;
+  message?: string;
+};
+
+export function parseShopeeRefreshTokenResponse(response: ShopeeRefreshResponse): ShopeeTokenSet {
+  const source = response.response ?? response;
+  const accessToken = source.access_token ?? response.access_token;
+
+  if (!accessToken) {
+    throw new Error(response.message ?? response.error ?? "Unable to refresh Shopee token.");
+  }
+
+  return {
+    accessToken,
+    refreshToken: source.refresh_token ?? response.refresh_token ?? null
+  };
+}
+
+async function shopeeFetchWithFallback<T>(
+  attempts: Array<{
+    path: string;
+    body: Record<string, unknown>;
+  }>,
+  accessToken?: string,
+  shopId?: string
+) {
+  let lastError: unknown = null;
+
+  for (const attempt of attempts) {
+    try {
+      return await shopeeFetch<T>(attempt.path, attempt.body, accessToken, shopId);
+    } catch (error) {
+      lastError = error;
+
+      if (!(error instanceof ShopeeHttpError) || error.status !== 404) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Shopee request failed.");
 }
 
 async function refreshShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet> {
@@ -55,14 +126,7 @@ async function refreshShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet
     throw new Error("Shopee token expired and no refresh token is available.");
   }
 
-  const response = await shopeeFetch<{
-    response?: {
-      access_token?: string;
-      refresh_token?: string;
-    };
-    error?: string;
-    message?: string;
-  }>(
+  const response = await shopeeFetch<ShopeeRefreshResponse>(
     env.shopee.refreshTokenPath(),
     {
       refresh_token: refreshToken,
@@ -73,13 +137,10 @@ async function refreshShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet
     order.store.shop_id
   );
 
-  if (!response.response?.access_token) {
-    throw new Error(response.message ?? response.error ?? "Unable to refresh Shopee token.");
-  }
-
+  const parsed = parseShopeeRefreshTokenResponse(response);
   return {
-    accessToken: response.response.access_token,
-    refreshToken: response.response.refresh_token ?? refreshToken
+    accessToken: parsed.accessToken,
+    refreshToken: parsed.refreshToken ?? refreshToken
   };
 }
 
@@ -130,24 +191,49 @@ export const shopeeAdapter: PlatformAdapter = {
     const { accessToken } = await resolveShopeeToken(order);
     const shopId = order.store.shop_id;
 
-    await shopeeFetch(
-      env.shopee.initPath(),
-      {
-        ordersn: order.platform_order_id
-      },
+    await shopeeFetchWithFallback(
+      [
+        {
+          path: env.shopee.initPath(),
+          body: {
+            ordersn: order.platform_order_id
+          }
+        },
+        {
+          path: "/api/v2/logistics/ship_order",
+          body: {
+            ordersn: order.platform_order_id
+          }
+        },
+        {
+          path: "/api/v2/logistics/ship_order",
+          body: {
+            order_sn: order.platform_order_id
+          }
+        }
+      ],
       accessToken,
       shopId
     );
 
-    const trackingResponse = await shopeeFetch<{
+    const trackingResponse = await shopeeFetchWithFallback<{
       response?: Record<string, unknown>;
       error?: string;
       message?: string;
-    }>(
-      env.shopee.trackingNumberPath(),
+    }>([
       {
-        ordersn: order.platform_order_id
+        path: env.shopee.trackingNumberPath(),
+        body: {
+          ordersn: order.platform_order_id
+        }
       },
+      {
+        path: env.shopee.trackingNumberPath(),
+        body: {
+          order_sn: order.platform_order_id
+        }
+      }
+    ],
       accessToken,
       shopId
     );
