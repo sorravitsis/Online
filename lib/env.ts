@@ -34,6 +34,26 @@ export const env = {
     appKey: () => requireEnv("SHOPEE_APP_KEY"),
     apiBase: () => requireEnv("SHOPEE_API_BASE").replace(/\/$/, ""),
     initPath: () => optionalEnv("SHOPEE_LOGISTICS_INIT_PATH", "/api/v2/logistics/init")!,
+    shippingDocumentParameterPath: () =>
+      optionalEnv(
+        "SHOPEE_SHIPPING_DOCUMENT_PARAMETER_PATH",
+        "/api/v2/logistics/get_shipping_document_parameter"
+      )!,
+    createShippingDocumentPath: () =>
+      optionalEnv(
+        "SHOPEE_CREATE_SHIPPING_DOCUMENT_PATH",
+        "/api/v2/logistics/create_shipping_document"
+      )!,
+    shippingDocumentResultPath: () =>
+      optionalEnv(
+        "SHOPEE_SHIPPING_DOCUMENT_RESULT_PATH",
+        "/api/v2/logistics/get_shipping_document_result"
+      )!,
+    downloadShippingDocumentPath: () =>
+      optionalEnv(
+        "SHOPEE_DOWNLOAD_SHIPPING_DOCUMENT_PATH",
+        "/api/v2/logistics/download_shipping_document"
+      )!,
     trackingNumberPath: () =>
       optionalEnv("SHOPEE_TRACKING_NUMBER_PATH", "/api/v2/logistics/get_tracking_number")!,
     refreshTokenPath: () =>

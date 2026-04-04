@@ -1,7 +1,8 @@
 const assert = require("node:assert/strict");
 
 const {
-  parseShopeeRefreshTokenResponse
+  parseShopeeRefreshTokenResponse,
+  selectShopeeShippingDocumentType
 } = require("../lib/adapters/shopee.ts");
 
 async function run() {
@@ -38,6 +39,54 @@ async function run() {
           message: "missing access token"
         }),
       /missing access token/
+    );
+  }
+
+  {
+    const result = selectShopeeShippingDocumentType({
+      response: {
+        result_list: [
+          {
+            order_sn: "260404ABC",
+            suggest_shipping_document_type: "THERMAL_AIR_WAYBILL",
+            selectable_shipping_document_type: ["NORMAL_AIR_WAYBILL"]
+          }
+        ]
+      }
+    });
+
+    assert.equal(result, "THERMAL_AIR_WAYBILL");
+  }
+
+  {
+    const result = selectShopeeShippingDocumentType({
+      response: {
+        result_list: [
+          {
+            order_sn: "260404ABC",
+            selectable_shipping_document_type: ["NORMAL_AIR_WAYBILL", "THERMAL_AIR_WAYBILL"]
+          }
+        ]
+      }
+    });
+
+    assert.equal(result, "NORMAL_AIR_WAYBILL");
+  }
+
+  {
+    assert.throws(
+      () =>
+        selectShopeeShippingDocumentType({
+          response: {
+            result_list: [
+              {
+                order_sn: "260404ABC",
+                fail_message: "document_type_not_available"
+              }
+            ]
+          }
+        }),
+      /document_type_not_available/
     );
   }
 }
