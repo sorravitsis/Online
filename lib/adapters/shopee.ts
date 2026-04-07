@@ -202,6 +202,19 @@ function getShopeeResultFailureMessage(resultItem: Record<string, unknown> | und
   return asString(resultItem.fail_message) ?? asString(resultItem.fail_error);
 }
 
+function isRetryableTrackingError(message: string | undefined) {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("tracking number is invalid") ||
+    normalized.includes("tracking_no is invalid") ||
+    normalized.includes("tracking number invalid")
+  );
+}
+
 export function selectShopeeShippingDocumentType(envelope: ShopeeResponseEnvelope) {
   const resultItem = getShopeeResultItem(envelope);
   const failureMessage = getShopeeResultFailureMessage(resultItem);
@@ -370,87 +383,103 @@ async function fetchShopeeShippingDocument(
   shopId: string,
   trackingNumber?: string
 ) {
-  const parameterResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-    env.shopee.shippingDocumentParameterPath(),
-    {
-      body: {
-        order_list: buildShopeeOrderList(orderId)
-      },
-      accessToken,
-      shopId
-    }
-  );
+  let lastRetryableMessage: string | null = null;
 
-  const shippingDocumentType = selectShopeeShippingDocumentType(parameterResponse);
-  const orderList = buildShopeeOrderList(orderId, {
-    shippingDocumentType
-  });
+  for (let pipelineAttempt = 0; pipelineAttempt < 5; pipelineAttempt += 1) {
+    try {
+      const parameterResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+        env.shopee.shippingDocumentParameterPath(),
+        {
+          body: {
+            order_list: buildShopeeOrderList(orderId)
+          },
+          accessToken,
+          shopId
+        }
+      );
 
-  const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-    env.shopee.createShippingDocumentPath(),
-    {
-      body: {
-        order_list: orderList
-      },
-      accessToken,
-      shopId
-    }
-  );
+      const shippingDocumentType = selectShopeeShippingDocumentType(parameterResponse);
+      const orderList = buildShopeeOrderList(orderId, {
+        shippingDocumentType
+      });
 
-  const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
-  if (createFailure) {
-    throw new Error(createFailure);
-  }
+      const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+        env.shopee.createShippingDocumentPath(),
+        {
+          body: {
+            order_list: orderList
+          },
+          accessToken,
+          shopId
+        }
+      );
 
-  let readyResponse: ShopeeResponseEnvelope | null = null;
+      const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
+      if (createFailure) {
+        throw new Error(`create_shipping_document: ${createFailure}`);
+      }
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-      env.shopee.shippingDocumentResultPath(),
-      {
+      let readyResponse: ShopeeResponseEnvelope | null = null;
+
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+          env.shopee.shippingDocumentResultPath(),
+          {
+            body: {
+              order_list: orderList
+            },
+            accessToken,
+            shopId
+          }
+        );
+
+        const resultItem = getShopeeResultItem(resultResponse);
+        const failureMessage = getShopeeResultFailureMessage(resultItem);
+        if (failureMessage) {
+          throw new Error(`get_shipping_document_result: ${failureMessage}`);
+        }
+
+        const status = asString(resultItem?.status)?.toUpperCase();
+        if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
+          readyResponse = resultResponse;
+          break;
+        }
+
+        await sleep(1000);
+      }
+
+      if (!readyResponse) {
+        throw new Error("Shopee shipping document task did not become ready in time.");
+      }
+
+      const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
         body: {
           order_list: orderList
         },
         accessToken,
         shopId
+      });
+
+      const readyResult = getShopeeResultItem(readyResponse);
+      return {
+        pdf,
+        trackingNumber:
+          trackingNumber ??
+          extractTrackingNumber(toRecord(readyResponse.response)) ??
+          extractTrackingNumber(readyResult ?? {})
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Shopee shipping document failed.";
+      if (!isRetryableTrackingError(message)) {
+        throw error;
       }
-    );
 
-    const resultItem = getShopeeResultItem(resultResponse);
-    const failureMessage = getShopeeResultFailureMessage(resultItem);
-    if (failureMessage) {
-      throw new Error(failureMessage);
+      lastRetryableMessage = message;
+      await sleep(2000);
     }
-
-    const status = asString(resultItem?.status)?.toUpperCase();
-    if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
-      readyResponse = resultResponse;
-      break;
-    }
-
-    await sleep(1000);
   }
 
-  if (!readyResponse) {
-    throw new Error("Shopee shipping document task did not become ready in time.");
-  }
-
-  const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
-    body: {
-      order_list: orderList
-    },
-    accessToken,
-    shopId
-  });
-
-  const readyResult = getShopeeResultItem(readyResponse);
-  return {
-    pdf,
-    trackingNumber:
-      trackingNumber ??
-      extractTrackingNumber(toRecord(readyResponse.response)) ??
-      extractTrackingNumber(readyResult ?? {})
-  };
+  throw new Error(lastRetryableMessage ?? "Shopee shipping document failed after retry.");
 }
 
 export const shopeeAdapter: PlatformAdapter = {
