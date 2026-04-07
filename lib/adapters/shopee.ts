@@ -202,7 +202,7 @@ function getShopeeResultFailureMessage(resultItem: Record<string, unknown> | und
   return asString(resultItem.fail_message) ?? asString(resultItem.fail_error);
 }
 
-function isRetryableTrackingError(message: string | undefined) {
+function isRetryableDocumentNotReadyError(message: string | undefined) {
   if (!message) {
     return false;
   }
@@ -211,7 +211,10 @@ function isRetryableTrackingError(message: string | undefined) {
   return (
     normalized.includes("tracking number is invalid") ||
     normalized.includes("tracking_no is invalid") ||
-    normalized.includes("tracking number invalid")
+    normalized.includes("tracking number invalid") ||
+    normalized.includes("package can not print now") ||
+    normalized.includes("document is not yet ready for printing") ||
+    normalized.includes("please try again later")
   );
 }
 
@@ -385,7 +388,7 @@ async function fetchShopeeShippingDocument(
 ) {
   let lastRetryableMessage: string | null = null;
 
-  for (let pipelineAttempt = 0; pipelineAttempt < 5; pipelineAttempt += 1) {
+  for (let pipelineAttempt = 0; pipelineAttempt < 8; pipelineAttempt += 1) {
     try {
       const parameterResponse = await shopeeFetch<ShopeeResponseEnvelope>(
         env.shopee.shippingDocumentParameterPath(),
@@ -470,12 +473,12 @@ async function fetchShopeeShippingDocument(
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Shopee shipping document failed.";
-      if (!isRetryableTrackingError(message)) {
+      if (!isRetryableDocumentNotReadyError(message)) {
         throw error;
       }
 
       lastRetryableMessage = message;
-      await sleep(2000);
+      await sleep(3000);
     }
   }
 
