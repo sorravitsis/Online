@@ -39,7 +39,6 @@ type ShopeeOrderListItem = {
   order_sn: string;
   package_number?: string;
   shipping_document_type?: string;
-  tracking_number?: string;
 };
 
 class ShopeeHttpError extends Error {
@@ -231,7 +230,6 @@ function buildShopeeOrderList(
   options?: {
     packageNumber?: string;
     shippingDocumentType?: string;
-    trackingNumber?: string;
   }
 ): ShopeeOrderListItem[] {
   return [
@@ -240,8 +238,7 @@ function buildShopeeOrderList(
       ...(options?.packageNumber ? { package_number: options.packageNumber } : {}),
       ...(options?.shippingDocumentType
         ? { shipping_document_type: options.shippingDocumentType }
-        : {}),
-      ...(options?.trackingNumber ? { tracking_number: options.trackingNumber } : {})
+        : {})
     }
   ];
 }
@@ -386,8 +383,7 @@ async function fetchShopeeShippingDocument(
 
   const shippingDocumentType = selectShopeeShippingDocumentType(parameterResponse);
   const orderList = buildShopeeOrderList(orderId, {
-    shippingDocumentType,
-    trackingNumber
+    shippingDocumentType
   });
 
   const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
