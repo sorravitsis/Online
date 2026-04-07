@@ -12,6 +12,10 @@ async function run() {
     "This order is locked by another session right now."
   );
   assert.equal(
+    mapScanError("shopee_awb_not_ready"),
+    "Shopee has not finished generating the AWB yet. Please wait a moment and retry."
+  );
+  assert.equal(
     mapScanSuccess("queued", "AWB123"),
     "Print queued. AWB: AWB123. The warehouse print agent will complete it shortly."
   );

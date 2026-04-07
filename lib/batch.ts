@@ -38,6 +38,8 @@ export function mapBatchError(error?: string) {
       return "One of the selected orders no longer exists.";
     case "order_not_pending":
       return "One of the selected orders is no longer pending.";
+    case "shopee_awb_not_ready":
+      return "Shopee has not finished generating one of the AWBs yet. Retry the batch shortly.";
     default:
       return error ?? "Batch print failed.";
   }

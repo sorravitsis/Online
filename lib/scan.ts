@@ -12,6 +12,8 @@ export function mapScanError(error?: string) {
       return "Order not found for this barcode.";
     case "order_not_pending":
       return "This order is not in a printable pending state.";
+    case "shopee_awb_not_ready":
+      return "Shopee has not finished generating the AWB yet. Please wait a moment and retry.";
     case "order_id_required":
       return "The selected order is missing its internal identifier.";
     default:

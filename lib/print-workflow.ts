@@ -17,7 +17,7 @@ export type PrintWorkflowDependencies = {
   setOrderStatus: (
     orderId: string,
     payload: {
-      awb_status: "printing" | "printed" | "failed";
+      awb_status: "pending" | "printing" | "printed" | "failed";
       awb_number?: string | null;
       printed_at?: string | null;
     }
@@ -38,6 +38,15 @@ export type PrintWorkflowDependencies = {
   convertPdfToZpl: typeof convertPdfToZpl;
   printZPL: typeof printZPL;
 };
+
+function isAwbNotReadyError(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("create_shipping_document: the tracking number is invalid") ||
+    normalized.includes("get_shipping_document_result: the tracking number is invalid") ||
+    normalized.includes("shopee_awb_not_ready")
+  );
+}
 
 async function acquireLock(orderId: string, lockedBy: string) {
   const supabase = createAdminClient();
@@ -75,7 +84,7 @@ async function releaseLock(orderId: string) {
 async function setOrderStatus(
   orderId: string,
   payload: {
-    awb_status: "printing" | "printed" | "failed";
+    awb_status: "pending" | "printing" | "printed" | "failed";
     awb_number?: string | null;
     printed_at?: string | null;
   }
@@ -245,8 +254,9 @@ export async function processSingleOrderPrint(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "print_failed";
+    const isRetryableNotReady = isAwbNotReadyError(message);
     await dependencies.setOrderStatus(order.id, {
-      awb_status: "failed"
+      awb_status: isRetryableNotReady ? "pending" : "failed"
     });
     await dependencies.insertPrintLog({
       orderId: order.id,
@@ -261,7 +271,7 @@ export async function processSingleOrderPrint(
     return {
       orderId: order.id,
       status: "failed",
-      error: message
+      error: isRetryableNotReady ? "shopee_awb_not_ready" : message
     };
   } finally {
     await dependencies.releaseLock(order.id);
@@ -355,23 +365,24 @@ export async function processBatchOrderPrint(
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : "print_failed";
+        const isRetryableNotReady = isAwbNotReadyError(message);
         await dependencies.setOrderStatus(order.id, {
-        awb_status: "failed"
-      });
-      await dependencies.insertPrintLog({
-        orderId: order.id,
-        batchId,
-        batchSize: orderIds.length,
-        printedBy,
-        mode: "batch",
-        status: "failed",
-        error: message
-      });
-      results.push({
-        orderId: order.id,
-        status: "failed",
-        error: message
-      });
+          awb_status: isRetryableNotReady ? "pending" : "failed"
+        });
+        await dependencies.insertPrintLog({
+          orderId: order.id,
+          batchId,
+          batchSize: orderIds.length,
+          printedBy,
+          mode: "batch",
+          status: "failed",
+          error: message
+        });
+        results.push({
+          orderId: order.id,
+          status: "failed",
+          error: isRetryableNotReady ? "shopee_awb_not_ready" : message
+        });
     } finally {
       await dependencies.releaseLock(order.id);
     }

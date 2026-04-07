@@ -128,6 +128,30 @@ async function run() {
     assert.equal(dependencies.insertPrintLog.calls[0][0].error, "Printer offline");
     assert.deepEqual(dependencies.releaseLock.calls[0], ["order-1"]);
   }
+
+  {
+    const dependencies = makeDependencies();
+    dependencies.generateAWB = createStub(async () => {
+      throw new Error("create_shipping_document: The tracking number is invalid. Please check the tracking number.");
+    });
+
+    const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
+
+    assert.equal(result.status, "failed");
+    assert.equal(result.error, "shopee_awb_not_ready");
+    assert.equal(
+      dependencies.setOrderStatus.calls.some(
+        ([, payload]) => payload && payload.awb_status === "pending"
+      ),
+      true
+    );
+    assert.equal(
+      dependencies.setOrderStatus.calls.some(
+        ([, payload]) => payload && payload.awb_status === "failed"
+      ),
+      false
+    );
+  }
 }
 
 module.exports = { run };
