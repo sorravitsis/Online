@@ -202,6 +202,25 @@ function getShopeeResultFailureMessage(resultItem: Record<string, unknown> | und
   return asString(resultItem.fail_message) ?? asString(resultItem.fail_error);
 }
 
+function getShopeeEnvelopeFailureMessage(envelope: ShopeeResponseEnvelope) {
+  const errorCode = asString(envelope.error);
+  const message = asString(envelope.message);
+
+  if (!errorCode) {
+    return undefined;
+  }
+
+  return message ? `${errorCode}: ${message}` : errorCode;
+}
+
+function assertShopeeEnvelopeSuccess(step: string, envelope: ShopeeResponseEnvelope) {
+  const envelopeFailure = getShopeeEnvelopeFailureMessage(envelope);
+
+  if (envelopeFailure) {
+    throw new Error(`${step}: ${envelopeFailure}`);
+  }
+}
+
 function isRetryableDocumentNotReadyError(message: string | undefined) {
   if (!message) {
     return false;
@@ -231,6 +250,31 @@ export function selectShopeeShippingDocumentType(envelope: ShopeeResponseEnvelop
     asStringArray(resultItem?.selectable_shipping_document_type)[0] ??
     "NORMAL_AIR_WAYBILL"
   );
+}
+
+export function selectShopeePackageNumber(envelope: ShopeeResponseEnvelope) {
+  const resultItem = getShopeeResultItem(envelope);
+  const packageNumberFromRoot = asString(resultItem?.package_number);
+
+  if (packageNumberFromRoot) {
+    return packageNumberFromRoot;
+  }
+
+  const packageList = resultItem?.package_list;
+  if (Array.isArray(packageList)) {
+    for (const entry of packageList) {
+      const packageNumber =
+        entry && typeof entry === "object"
+          ? asString((entry as Record<string, unknown>).package_number)
+          : undefined;
+
+      if (packageNumber) {
+        return packageNumber;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function extractTrackingNumber(payload: Record<string, unknown>) {
@@ -311,7 +355,7 @@ async function resolveShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet
 }
 
 async function arrangeShopeeShipment(order: OrderWithStore, accessToken: string, shopId: string) {
-  await shopeeFetchWithFallback<ShopeeResponseEnvelope>([
+  const shipmentResponse = await shopeeFetchWithFallback<ShopeeResponseEnvelope>([
     {
       path: env.shopee.initPath(),
       options: {
@@ -343,6 +387,8 @@ async function arrangeShopeeShipment(order: OrderWithStore, accessToken: string,
       }
     }
   ]);
+
+  assertShopeeEnvelopeSuccess("ship_order", shipmentResponse);
 }
 
 async function tryResolveTrackingNumber(orderId: string, accessToken: string, shopId: string) {
@@ -400,9 +446,12 @@ async function fetchShopeeShippingDocument(
           shopId
         }
       );
+      assertShopeeEnvelopeSuccess("get_shipping_document_parameter", parameterResponse);
 
       const shippingDocumentType = selectShopeeShippingDocumentType(parameterResponse);
+      const packageNumber = selectShopeePackageNumber(parameterResponse);
       const orderList = buildShopeeOrderList(orderId, {
+        packageNumber,
         shippingDocumentType
       });
 
@@ -416,6 +465,7 @@ async function fetchShopeeShippingDocument(
           shopId
         }
       );
+      assertShopeeEnvelopeSuccess("create_shipping_document", createResponse);
 
       const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
       if (createFailure) {
@@ -435,6 +485,7 @@ async function fetchShopeeShippingDocument(
             shopId
           }
         );
+        assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
 
         const resultItem = getShopeeResultItem(resultResponse);
         const failureMessage = getShopeeResultFailureMessage(resultItem);

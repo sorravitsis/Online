@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 
 const {
   parseShopeeRefreshTokenResponse,
+  selectShopeePackageNumber,
   selectShopeeShippingDocumentType
 } = require("../lib/adapters/shopee.ts");
 
@@ -88,6 +89,40 @@ async function run() {
         }),
       /document_type_not_available/
     );
+  }
+
+  {
+    const result = selectShopeePackageNumber({
+      response: {
+        result_list: [
+          {
+            order_sn: "260404ABC",
+            package_number: "PKG-123"
+          }
+        ]
+      }
+    });
+
+    assert.equal(result, "PKG-123");
+  }
+
+  {
+    const result = selectShopeePackageNumber({
+      response: {
+        result_list: [
+          {
+            order_sn: "260404ABC",
+            package_list: [
+              {
+                package_number: "PKG-456"
+              }
+            ]
+          }
+        ]
+      }
+    });
+
+    assert.equal(result, "PKG-456");
   }
 }
 

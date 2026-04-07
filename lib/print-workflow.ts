@@ -44,6 +44,9 @@ function isAwbNotReadyError(message: string) {
   return (
     normalized.includes("create_shipping_document: the tracking number is invalid") ||
     normalized.includes("get_shipping_document_result: the tracking number is invalid") ||
+    normalized.includes("package can not print now") ||
+    normalized.includes("document is not yet ready for printing") ||
+    normalized.includes("please try again later") ||
     normalized.includes("shopee_awb_not_ready")
   );
 }
