@@ -6,7 +6,8 @@ import { getRequestSession } from "@/lib/auth";
 const PUBLIC_PATHS = new Set([
   "/login",
   "/api/auth/login",
-  "/api/cron/cleanup-locks"
+  "/api/cron/cleanup-locks",
+  "/api/admin/lazada/callback"
 ]);
 
 export async function middleware(request: NextRequest) {

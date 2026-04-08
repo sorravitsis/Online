@@ -24,6 +24,10 @@ const tests = [
     run: require("./shopee-adapter.test.cjs").run
   },
   {
+    name: "lazada helpers",
+    run: require("./lazada.test.cjs").run
+  },
+  {
     name: "batch helpers",
     run: require("./batch.test.cjs").run
   },

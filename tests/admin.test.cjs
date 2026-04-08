@@ -20,6 +20,10 @@ async function run() {
     mapAdminError("password_confirmation_mismatch"),
     "New password confirmation does not match."
   );
+  assert.equal(
+    mapAdminError("invalid_lazada_state"),
+    "The Lazada authorization state was rejected. Start the connection again."
+  );
 }
 
 module.exports = { run };

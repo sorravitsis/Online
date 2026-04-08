@@ -30,6 +30,8 @@ Copy `.env.example` to `.env.local` and fill in real values:
 - `LAZADA_APP_KEY`
 - `LAZADA_APP_SECRET`
 - `LAZADA_API_BASE`
+- `LAZADA_AUTH_BASE`
+- `LAZADA_REDIRECT_URI`
 - `LABELARY_API_URL`
 
 ## Local Commands
@@ -67,6 +69,7 @@ Optional overrides:
 - add the same runtime env vars in Vercel and Supabase before go-live
 - follow [docs/go-live-checklist.md](./docs/go-live-checklist.md) during production rollout
 - use [supabase/seeds/store-onboarding-template.sql](./supabase/seeds/store-onboarding-template.sql) as the starting SQL for each real store
+- for Lazada store connection, register `LAZADA_REDIRECT_URI` in the Lazada Open Platform app and then use the `Connect Lazada store` button in `/admin`
 
 ## Local Queue Mode For USB Printers
 

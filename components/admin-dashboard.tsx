@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { mapAdminError } from "@/lib/admin";
 import type { StoreRow } from "@/lib/types";
 
@@ -14,6 +16,7 @@ type StoreSaveState = {
 };
 
 export function AdminDashboard({ initialStores }: AdminDashboardProps) {
+  const searchParams = useSearchParams();
   const [stores, setStores] = useState(initialStores);
   const [savingStoreId, setSavingStoreId] = useState<string | null>(null);
   const [storeStates, setStoreStates] = useState<Record<string, StoreSaveState>>(
@@ -33,6 +36,9 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
     () => [...stores].sort((left, right) => left.name.localeCompare(right.name)),
     [stores]
   );
+  const lazadaStatus = searchParams.get("lazada");
+  const lazadaStore = searchParams.get("store");
+  const lazadaMessage = searchParams.get("message");
 
   async function saveStore(store: StoreRow) {
     setSavingStoreId(store.id);
@@ -161,6 +167,39 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
             app password from one screen.
           </p>
         </header>
+
+        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-brand-ink">
+                Platform connections
+              </h2>
+              <p className="text-sm text-slate-500">
+                Connect Lazada stores through the official seller authorization flow.
+              </p>
+            </div>
+            <Link
+              className="inline-flex items-center justify-center rounded-full bg-brand-blue px-5 py-3 text-sm font-medium text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+              href="/api/admin/lazada/connect"
+            >
+              Connect Lazada store
+            </Link>
+          </div>
+
+          {lazadaStatus ? (
+            <div
+              className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+                lazadaStatus === "connected"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              {lazadaStatus === "connected"
+                ? `Lazada store connected${lazadaStore ? `: ${lazadaStore}` : "."}`
+                : mapAdminError(lazadaMessage ?? "lazada_store_connection_failed")}
+            </div>
+          ) : null}
+        </section>
 
         <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
           <div className="flex items-center justify-between">

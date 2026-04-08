@@ -63,7 +63,10 @@ export const env = {
   lazada: {
     appKey: () => requireEnv("LAZADA_APP_KEY"),
     appSecret: () => requireEnv("LAZADA_APP_SECRET"),
-    apiBase: () => requireEnv("LAZADA_API_BASE").replace(/\/$/, "")
+    apiBase: () => requireEnv("LAZADA_API_BASE").replace(/\/$/, ""),
+    authBase: () =>
+      optionalEnv("LAZADA_AUTH_BASE", "https://auth.lazada.com")!.replace(/\/$/, ""),
+    redirectUri: () => requireEnv("LAZADA_REDIRECT_URI")
   },
   labelary: {
     apiUrl: () => requireEnv("LABELARY_API_URL")
