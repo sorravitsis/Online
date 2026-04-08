@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 const {
+  isShipOrderSelectionError,
   parseShopeeRefreshTokenResponse,
   selectShopeePackageNumber,
   selectShopeeShippingDocumentType
@@ -123,6 +124,16 @@ async function run() {
     });
 
     assert.equal(result, "PKG-456");
+  }
+
+  {
+    assert.equal(
+      isShipOrderSelectionError(
+        "logistics.ship_order_only_support_one_type: Please select just one way to ship order: pickup or dropoff or non-integrated."
+      ),
+      true
+    );
+    assert.equal(isShipOrderSelectionError("document_type_not_available"), false);
   }
 }
 

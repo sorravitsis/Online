@@ -221,6 +221,19 @@ function assertShopeeEnvelopeSuccess(step: string, envelope: ShopeeResponseEnvel
   }
 }
 
+export function isShipOrderSelectionError(message: string | undefined) {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("ship_order_only_support_one_type") ||
+    normalized.includes("please select just one way to ship order") ||
+    normalized.includes("pickup or dropoff or non-integrated")
+  );
+}
+
 function isRetryableDocumentNotReadyError(message: string | undefined) {
   if (!message) {
     return false;
@@ -388,7 +401,17 @@ async function arrangeShopeeShipment(order: OrderWithStore, accessToken: string,
     }
   ]);
 
-  assertShopeeEnvelopeSuccess("ship_order", shipmentResponse);
+  const shipmentFailure =
+    getShopeeEnvelopeFailureMessage(shipmentResponse) ??
+    getShopeeResultFailureMessage(getShopeeResultItem(shipmentResponse));
+
+  if (isShipOrderSelectionError(shipmentFailure)) {
+    return;
+  }
+
+  if (shipmentFailure) {
+    throw new Error(`ship_order: ${shipmentFailure}`);
+  }
 }
 
 async function tryResolveTrackingNumber(orderId: string, accessToken: string, shopId: string) {
