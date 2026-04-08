@@ -138,7 +138,10 @@ async function run() {
     const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
 
     assert.equal(result.status, "failed");
-    assert.equal(result.error, "shopee_awb_not_ready");
+    assert.match(
+      result.error,
+      /^shopee_awb_not_ready::create_shipping_document: The tracking number is invalid/
+    );
     assert.equal(
       dependencies.setOrderStatus.calls.some(
         ([, payload]) => payload && payload.awb_status === "pending"
@@ -164,7 +167,10 @@ async function run() {
     const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
 
     assert.equal(result.status, "failed");
-    assert.equal(result.error, "shopee_awb_not_ready");
+    assert.match(
+      result.error,
+      /^shopee_awb_not_ready::create_shipping_document: The package can not print now/
+    );
     assert.equal(
       dependencies.setOrderStatus.calls.some(
         ([, payload]) => payload && payload.awb_status === "pending"

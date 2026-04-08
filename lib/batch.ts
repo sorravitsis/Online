@@ -21,6 +21,13 @@ export function getSelectionLimit(
 }
 
 export function mapBatchError(error?: string) {
+  if (error?.startsWith("shopee_awb_not_ready::")) {
+    const detail = error.slice("shopee_awb_not_ready::".length).trim();
+    return detail
+      ? `Shopee has not finished generating one of the AWBs yet. ${detail}`
+      : "Shopee has not finished generating one of the AWBs yet. Retry the batch shortly.";
+  }
+
   switch (error) {
     case "invalid_request":
       return "The batch request payload could not be read.";

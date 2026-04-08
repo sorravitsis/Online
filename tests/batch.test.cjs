@@ -19,6 +19,10 @@ async function run() {
     mapBatchError("batch_limit_exceeded"),
     "The selected orders exceed the allowed batch limit for one of the stores."
   );
+  assert.equal(
+    mapBatchError("shopee_awb_not_ready::get_shipping_document_result: document not ready"),
+    "Shopee has not finished generating one of the AWBs yet. get_shipping_document_result: document not ready"
+  );
 
   assert.deepEqual(
     summarizeBatchResults([

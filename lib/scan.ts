@@ -1,4 +1,11 @@
 export function mapScanError(error?: string) {
+  if (error?.startsWith("shopee_awb_not_ready::")) {
+    const detail = error.slice("shopee_awb_not_ready::".length).trim();
+    return detail
+      ? `Shopee has not finished generating the AWB yet. ${detail}`
+      : "Shopee has not finished generating the AWB yet. Please wait a moment and retry.";
+  }
+
   switch (error) {
     case "invalid_request":
       return "The print request could not be read. Please scan again.";

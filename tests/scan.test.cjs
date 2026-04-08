@@ -16,6 +16,10 @@ async function run() {
     "Shopee has not finished generating the AWB yet. Please wait a moment and retry."
   );
   assert.equal(
+    mapScanError("shopee_awb_not_ready::create_shipping_document: The tracking number is invalid."),
+    "Shopee has not finished generating the AWB yet. create_shipping_document: The tracking number is invalid."
+  );
+  assert.equal(
     mapScanError("unauthorized"),
     "Your session expired. Sign in again before printing."
   );

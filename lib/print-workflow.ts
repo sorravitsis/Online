@@ -51,6 +51,10 @@ function isAwbNotReadyError(message: string) {
   );
 }
 
+function encodeRetryableAwbError(message: string) {
+  return `shopee_awb_not_ready::${message}`;
+}
+
 async function acquireLock(orderId: string, lockedBy: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -274,7 +278,7 @@ export async function processSingleOrderPrint(
     return {
       orderId: order.id,
       status: "failed",
-      error: isRetryableNotReady ? "shopee_awb_not_ready" : message
+      error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
     };
   } finally {
     await dependencies.releaseLock(order.id);
@@ -384,7 +388,7 @@ export async function processBatchOrderPrint(
         results.push({
           orderId: order.id,
           status: "failed",
-          error: isRetryableNotReady ? "shopee_awb_not_ready" : message
+          error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
         });
     } finally {
       await dependencies.releaseLock(order.id);
