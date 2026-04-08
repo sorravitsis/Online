@@ -505,6 +505,8 @@ async function fetchShopeeShippingDocument(
 
       const shippingDocumentTypes = selectShopeeShippingDocumentTypes(parameterResponse);
       const packageNumber = selectShopeePackageNumber(parameterResponse);
+      let retryableCandidateMessage: string | null = null;
+
       for (const shippingDocumentType of shippingDocumentTypes) {
         const orderList = buildShopeeOrderList(orderId, {
           packageNumber,
@@ -584,12 +586,17 @@ async function fetchShopeeShippingDocument(
             error instanceof Error ? error.message : "Shopee shipping document failed.";
 
           if (isRetryableDocumentNotReadyError(candidateMessage)) {
-            throw error;
+            retryableCandidateMessage = candidateMessage;
+            continue;
           }
 
           lastCandidateError =
             error instanceof Error ? error : new Error("Shopee shipping document failed.");
         }
+      }
+
+      if (retryableCandidateMessage) {
+        throw new Error(retryableCandidateMessage);
       }
 
       if (lastCandidateError) {
