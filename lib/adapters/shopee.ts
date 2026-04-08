@@ -259,7 +259,7 @@ export function isShipOrderSelectionError(message: string | undefined) {
   );
 }
 
-function isRetryableDocumentNotReadyError(message: string | undefined) {
+export function isExistingDocumentCreateError(message: string | undefined) {
   if (!message) {
     return false;
   }
@@ -268,7 +268,18 @@ function isRetryableDocumentNotReadyError(message: string | undefined) {
   return (
     normalized.includes("tracking number is invalid") ||
     normalized.includes("tracking_no is invalid") ||
-    normalized.includes("tracking number invalid") ||
+    normalized.includes("tracking number invalid")
+  );
+}
+
+function isRetryableDocumentNotReadyError(message: string | undefined) {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    isExistingDocumentCreateError(normalized) ||
     normalized.includes("package can not print now") ||
     normalized.includes("document is not yet ready for printing") ||
     normalized.includes("please try again later")
@@ -349,6 +360,48 @@ function buildShopeeOrderList(
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForShopeeShippingDocumentResult(
+  orderList: ShopeeOrderListItem[],
+  accessToken: string,
+  shopId: string
+) {
+  let readyResponse: ShopeeResponseEnvelope | null = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+      env.shopee.shippingDocumentResultPath(),
+      {
+        body: {
+          order_list: orderList
+        },
+        accessToken,
+        shopId
+      }
+    );
+    assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
+
+    const resultItem = getShopeeResultItem(resultResponse);
+    const failureMessage = getShopeeResultFailureMessage(resultItem);
+    if (failureMessage) {
+      throw new Error(`get_shipping_document_result: ${failureMessage}`);
+    }
+
+    const status = asString(resultItem?.status)?.toUpperCase();
+    if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
+      readyResponse = resultResponse;
+      break;
+    }
+
+    await sleep(1000);
+  }
+
+  if (!readyResponse) {
+    throw new Error("Shopee shipping document task did not become ready in time.");
+  }
+
+  return readyResponse;
 }
 
 async function refreshShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet> {
@@ -514,6 +567,7 @@ async function fetchShopeeShippingDocument(
         });
 
         try {
+          let createFailedBecauseDocumentAlreadyExists = false;
           const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
             env.shopee.createShippingDocumentPath(),
             {
@@ -524,46 +578,22 @@ async function fetchShopeeShippingDocument(
               shopId
             }
           );
-          assertShopeeEnvelopeSuccess("create_shipping_document", createResponse);
-
-          const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
+          const createFailure =
+            getShopeeEnvelopeFailureMessage(createResponse) ??
+            getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
           if (createFailure) {
-            throw new Error(`create_shipping_document: ${createFailure}`);
-          }
-
-          let readyResponse: ShopeeResponseEnvelope | null = null;
-
-          for (let attempt = 0; attempt < 5; attempt += 1) {
-            const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-              env.shopee.shippingDocumentResultPath(),
-              {
-                body: {
-                  order_list: orderList
-                },
-                accessToken,
-                shopId
-              }
-            );
-            assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
-
-            const resultItem = getShopeeResultItem(resultResponse);
-            const failureMessage = getShopeeResultFailureMessage(resultItem);
-            if (failureMessage) {
-              throw new Error(`get_shipping_document_result: ${failureMessage}`);
+            if (trackingNumber && isExistingDocumentCreateError(createFailure)) {
+              createFailedBecauseDocumentAlreadyExists = true;
+            } else {
+              throw new Error(`create_shipping_document: ${createFailure}`);
             }
-
-            const status = asString(resultItem?.status)?.toUpperCase();
-            if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
-              readyResponse = resultResponse;
-              break;
-            }
-
-            await sleep(1000);
           }
 
-          if (!readyResponse) {
-            throw new Error("Shopee shipping document task did not become ready in time.");
-          }
+          const readyResponse = await waitForShopeeShippingDocumentResult(
+            orderList,
+            accessToken,
+            shopId
+          );
 
           const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
             body: {
@@ -577,6 +607,7 @@ async function fetchShopeeShippingDocument(
           return {
             pdf,
             trackingNumber:
+              (createFailedBecauseDocumentAlreadyExists ? trackingNumber : undefined) ??
               trackingNumber ??
               extractTrackingNumber(toRecord(readyResponse.response)) ??
               extractTrackingNumber(readyResult ?? {})

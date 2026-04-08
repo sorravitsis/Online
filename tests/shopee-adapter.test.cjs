@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 const {
+  isExistingDocumentCreateError,
   isShipOrderSelectionError,
   parseShopeeRefreshTokenResponse,
   selectShopeePackageNumber,
@@ -151,6 +152,14 @@ async function run() {
       true
     );
     assert.equal(isShipOrderSelectionError("document_type_not_available"), false);
+  }
+
+  {
+    assert.equal(
+      isExistingDocumentCreateError("2604089QVTP03N: The tracking number is invalid. Please check the tracking number."),
+      true
+    );
+    assert.equal(isExistingDocumentCreateError("document_type_not_available"), false);
   }
 }
 
