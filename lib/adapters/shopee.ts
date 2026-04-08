@@ -132,6 +132,24 @@ async function shopeeBinaryFetch(path: string, options: ShopeeRequestOptions = {
   return Buffer.from(await response.arrayBuffer());
 }
 
+async function shopeeDownloadDocument(path: string, options: ShopeeRequestOptions = {}) {
+  const response = await shopeeRequest(path, options);
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+
+  if (contentType.includes("application/json")) {
+    const envelope = (await response.json()) as ShopeeResponseEnvelope;
+    assertShopeeEnvelopeSuccess(path, envelope);
+
+    const failure =
+      getShopeeEnvelopeFailureMessage(envelope) ??
+      getShopeeResultFailureMessage(getShopeeResultItem(envelope));
+
+    throw new Error(`${path}: ${failure ?? "Shopee returned JSON instead of a label document."}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
 export function parseShopeeRefreshTokenResponse(response: ShopeeRefreshResponse): ShopeeTokenSet {
   const source = response.response ?? response;
   const accessToken = source.access_token ?? response.access_token;
@@ -404,6 +422,54 @@ async function waitForShopeeShippingDocumentResult(
   return readyResponse;
 }
 
+async function tryDownloadExistingShopeeShippingDocument(
+  orderId: string,
+  accessToken: string,
+  shopId: string,
+  trackingNumber: string
+) {
+  const parameterResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+    env.shopee.shippingDocumentParameterPath(),
+    {
+      body: {
+        order_list: buildShopeeOrderList(orderId)
+      },
+      accessToken,
+      shopId
+    }
+  );
+  assertShopeeEnvelopeSuccess("get_shipping_document_parameter", parameterResponse);
+
+  const shippingDocumentTypes = selectShopeeShippingDocumentTypes(parameterResponse);
+  const packageNumber = selectShopeePackageNumber(parameterResponse);
+
+  for (const shippingDocumentType of shippingDocumentTypes) {
+    const orderList = buildShopeeOrderList(orderId, {
+      packageNumber,
+      shippingDocumentType
+    });
+
+    try {
+      const pdf = await shopeeDownloadDocument(env.shopee.downloadShippingDocumentPath(), {
+        body: {
+          order_list: orderList
+        },
+        accessToken,
+        shopId
+      });
+
+      return {
+        pdf,
+        trackingNumber
+      };
+    } catch {
+      // Ignore and keep trying the next document type. Some shops only allow one type.
+    }
+  }
+
+  return null;
+}
+
 async function refreshShopeeToken(order: OrderWithStore): Promise<ShopeeTokenSet> {
   const refreshToken = order.store?.refresh_token;
 
@@ -655,10 +721,30 @@ export const shopeeAdapter: PlatformAdapter = {
 
     const { accessToken } = await resolveShopeeToken(order);
     const shopId = order.store.shop_id;
+    let trackingNumber = await tryResolveTrackingNumber(order.platform_order_id, accessToken, shopId);
+
+    if (trackingNumber) {
+      const existingDocument = await tryDownloadExistingShopeeShippingDocument(
+        order.platform_order_id,
+        accessToken,
+        shopId,
+        trackingNumber
+      );
+
+      if (existingDocument) {
+        return {
+          pdf: existingDocument.pdf,
+          awbNumber: existingDocument.trackingNumber
+        };
+      }
+    }
 
     await arrangeShopeeShipment(order, accessToken, shopId);
 
-    const trackingNumber = await tryResolveTrackingNumber(order.platform_order_id, accessToken, shopId);
+    trackingNumber =
+      trackingNumber ??
+      (await tryResolveTrackingNumber(order.platform_order_id, accessToken, shopId));
+
     const document = await fetchShopeeShippingDocument(
       order.platform_order_id,
       accessToken,
