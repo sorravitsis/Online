@@ -16,6 +16,10 @@ async function run() {
     "Shopee has not finished generating the AWB yet. Please wait a moment and retry."
   );
   assert.equal(
+    mapScanError("unauthorized"),
+    "Your session expired. Sign in again before printing."
+  );
+  assert.equal(
     mapScanSuccess("queued", "AWB123"),
     "Print queued. AWB: AWB123. The warehouse print agent will complete it shortly."
   );

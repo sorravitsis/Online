@@ -27,6 +27,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "unauthorized"
+      },
+      {
+        status: 401
+      }
+    );
+  }
+
   const response = NextResponse.redirect(new URL("/login", request.url));
   response.cookies.delete(env.auth.cookieName);
   return response;

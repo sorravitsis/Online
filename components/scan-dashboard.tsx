@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { readJsonResponse } from "@/lib/http";
 import { mapScanError, mapScanSuccess, summarizeItems } from "@/lib/scan";
 import type { OrderWithStore } from "@/lib/types";
 
@@ -60,7 +61,11 @@ export function ScanDashboard() {
         },
         body: JSON.stringify({ orderId: order.id })
       });
-      const json = await response.json();
+      const json = (await readJsonResponse<{
+        success: boolean;
+        data?: { awbNumber?: string; status?: "printed" | "queued" };
+        error?: string;
+      }>(response));
 
       if (!response.ok || !json.success) {
         setResult({
@@ -70,11 +75,22 @@ export function ScanDashboard() {
         return;
       }
 
+      const awbNumber = json.data?.awbNumber;
+      const status = json.data?.status ?? "printed";
+
+      if (!awbNumber) {
+        setResult({
+          kind: "error",
+          message: "The print API did not return an AWB number."
+        });
+        return;
+      }
+
       setResult({
         kind: "success",
-        awbNumber: json.data.awbNumber as string,
+        awbNumber,
         order,
-        status: (json.data.status as "printed" | "queued") ?? "printed"
+        status
       });
       setBarcode("");
     } catch (error) {
@@ -103,10 +119,17 @@ export function ScanDashboard() {
       const orderLookup = await fetch(
         `/api/orders?barcode=${encodeURIComponent(barcode.trim())}&limit=1`
       );
-      const lookupJson = await orderLookup.json();
+      const lookupJson = await readJsonResponse<{
+        success: boolean;
+        data?: { orders?: OrderWithStore[] };
+        error?: string;
+      }>(orderLookup);
 
       if (!lookupJson.success || !lookupJson.data?.orders?.[0]) {
-        setResult({ kind: "error", message: "Order not found for barcode." });
+        setResult({
+          kind: "error",
+          message: mapScanError(lookupJson.error ?? "order_not_found")
+        });
         return;
       }
 
