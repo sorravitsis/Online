@@ -183,15 +183,19 @@ function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
-function getShopeeResultItem(envelope: ShopeeResponseEnvelope) {
+function getShopeeResultItems(envelope: ShopeeResponseEnvelope) {
   const response = toRecord(envelope.response);
   const resultList = response.result_list;
 
   if (!Array.isArray(resultList) || resultList.length === 0) {
-    return undefined;
+    return [];
   }
 
-  return toRecord(resultList[0]);
+  return resultList.map((item) => toRecord(item));
+}
+
+function getShopeeResultItem(envelope: ShopeeResponseEnvelope) {
+  return getShopeeResultItems(envelope)[0];
 }
 
 function getShopeeResultFailureMessage(resultItem: Record<string, unknown> | undefined) {
@@ -202,15 +206,36 @@ function getShopeeResultFailureMessage(resultItem: Record<string, unknown> | und
   return asString(resultItem.fail_message) ?? asString(resultItem.fail_error);
 }
 
+function getShopeeResultFailureMessages(envelope: ShopeeResponseEnvelope) {
+  return getShopeeResultItems(envelope)
+    .map((item) => {
+      const message = getShopeeResultFailureMessage(item);
+      const orderSn = asString(item.order_sn);
+      const packageNumber = asString(item.package_number);
+
+      if (!message) {
+        return undefined;
+      }
+
+      const identity = [orderSn, packageNumber].filter(Boolean).join("/");
+      return identity ? `${identity}: ${message}` : message;
+    })
+    .filter((message): message is string => typeof message === "string" && message.length > 0);
+}
+
 function getShopeeEnvelopeFailureMessage(envelope: ShopeeResponseEnvelope) {
   const errorCode = asString(envelope.error);
   const message = asString(envelope.message);
+  const resultFailures = getShopeeResultFailureMessages(envelope);
 
   if (!errorCode) {
-    return undefined;
+    return resultFailures[0];
   }
 
-  return message ? `${errorCode}: ${message}` : errorCode;
+  const envelopeMessage = message ? `${errorCode}: ${message}` : errorCode;
+  return resultFailures.length > 0
+    ? `${envelopeMessage}. ${resultFailures.join(" | ")}`
+    : envelopeMessage;
 }
 
 function assertShopeeEnvelopeSuccess(step: string, envelope: ShopeeResponseEnvelope) {
@@ -250,7 +275,7 @@ function isRetryableDocumentNotReadyError(message: string | undefined) {
   );
 }
 
-export function selectShopeeShippingDocumentType(envelope: ShopeeResponseEnvelope) {
+export function selectShopeeShippingDocumentTypes(envelope: ShopeeResponseEnvelope) {
   const resultItem = getShopeeResultItem(envelope);
   const failureMessage = getShopeeResultFailureMessage(resultItem);
 
@@ -258,11 +283,17 @@ export function selectShopeeShippingDocumentType(envelope: ShopeeResponseEnvelop
     throw new Error(failureMessage);
   }
 
-  return (
-    asString(resultItem?.suggest_shipping_document_type) ??
-    asStringArray(resultItem?.selectable_shipping_document_type)[0] ??
+  const candidates = [
+    asString(resultItem?.suggest_shipping_document_type),
+    ...asStringArray(resultItem?.selectable_shipping_document_type),
     "NORMAL_AIR_WAYBILL"
-  );
+  ].filter((value): value is string => typeof value === "string" && value.length > 0);
+
+  return [...new Set(candidates)];
+}
+
+export function selectShopeeShippingDocumentType(envelope: ShopeeResponseEnvelope) {
+  return selectShopeeShippingDocumentTypes(envelope)[0];
 }
 
 export function selectShopeePackageNumber(envelope: ShopeeResponseEnvelope) {
@@ -456,6 +487,7 @@ async function fetchShopeeShippingDocument(
   trackingNumber?: string
 ) {
   let lastRetryableMessage: string | null = null;
+  let lastCandidateError: Error | null = null;
 
   for (let pipelineAttempt = 0; pipelineAttempt < 8; pipelineAttempt += 1) {
     try {
@@ -471,80 +503,98 @@ async function fetchShopeeShippingDocument(
       );
       assertShopeeEnvelopeSuccess("get_shipping_document_parameter", parameterResponse);
 
-      const shippingDocumentType = selectShopeeShippingDocumentType(parameterResponse);
+      const shippingDocumentTypes = selectShopeeShippingDocumentTypes(parameterResponse);
       const packageNumber = selectShopeePackageNumber(parameterResponse);
-      const orderList = buildShopeeOrderList(orderId, {
-        packageNumber,
-        shippingDocumentType
-      });
+      for (const shippingDocumentType of shippingDocumentTypes) {
+        const orderList = buildShopeeOrderList(orderId, {
+          packageNumber,
+          shippingDocumentType
+        });
 
-      const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-        env.shopee.createShippingDocumentPath(),
-        {
-          body: {
-            order_list: orderList
-          },
-          accessToken,
-          shopId
-        }
-      );
-      assertShopeeEnvelopeSuccess("create_shipping_document", createResponse);
+        try {
+          const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+            env.shopee.createShippingDocumentPath(),
+            {
+              body: {
+                order_list: orderList
+              },
+              accessToken,
+              shopId
+            }
+          );
+          assertShopeeEnvelopeSuccess("create_shipping_document", createResponse);
 
-      const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
-      if (createFailure) {
-        throw new Error(`create_shipping_document: ${createFailure}`);
-      }
+          const createFailure = getShopeeResultFailureMessage(getShopeeResultItem(createResponse));
+          if (createFailure) {
+            throw new Error(`create_shipping_document: ${createFailure}`);
+          }
 
-      let readyResponse: ShopeeResponseEnvelope | null = null;
+          let readyResponse: ShopeeResponseEnvelope | null = null;
 
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
-          env.shopee.shippingDocumentResultPath(),
-          {
+          for (let attempt = 0; attempt < 5; attempt += 1) {
+            const resultResponse = await shopeeFetch<ShopeeResponseEnvelope>(
+              env.shopee.shippingDocumentResultPath(),
+              {
+                body: {
+                  order_list: orderList
+                },
+                accessToken,
+                shopId
+              }
+            );
+            assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
+
+            const resultItem = getShopeeResultItem(resultResponse);
+            const failureMessage = getShopeeResultFailureMessage(resultItem);
+            if (failureMessage) {
+              throw new Error(`get_shipping_document_result: ${failureMessage}`);
+            }
+
+            const status = asString(resultItem?.status)?.toUpperCase();
+            if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
+              readyResponse = resultResponse;
+              break;
+            }
+
+            await sleep(1000);
+          }
+
+          if (!readyResponse) {
+            throw new Error("Shopee shipping document task did not become ready in time.");
+          }
+
+          const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
             body: {
               order_list: orderList
             },
             accessToken,
             shopId
+          });
+
+          const readyResult = getShopeeResultItem(readyResponse);
+          return {
+            pdf,
+            trackingNumber:
+              trackingNumber ??
+              extractTrackingNumber(toRecord(readyResponse.response)) ??
+              extractTrackingNumber(readyResult ?? {})
+          };
+        } catch (error) {
+          const candidateMessage =
+            error instanceof Error ? error.message : "Shopee shipping document failed.";
+
+          if (isRetryableDocumentNotReadyError(candidateMessage)) {
+            throw error;
           }
-        );
-        assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
 
-        const resultItem = getShopeeResultItem(resultResponse);
-        const failureMessage = getShopeeResultFailureMessage(resultItem);
-        if (failureMessage) {
-          throw new Error(`get_shipping_document_result: ${failureMessage}`);
+          lastCandidateError =
+            error instanceof Error ? error : new Error("Shopee shipping document failed.");
         }
-
-        const status = asString(resultItem?.status)?.toUpperCase();
-        if (!status || status === "READY" || status === "SUCCESS" || status === "COMPLETED") {
-          readyResponse = resultResponse;
-          break;
-        }
-
-        await sleep(1000);
       }
 
-      if (!readyResponse) {
-        throw new Error("Shopee shipping document task did not become ready in time.");
+      if (lastCandidateError) {
+        throw lastCandidateError;
       }
-
-      const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
-        body: {
-          order_list: orderList
-        },
-        accessToken,
-        shopId
-      });
-
-      const readyResult = getShopeeResultItem(readyResponse);
-      return {
-        pdf,
-        trackingNumber:
-          trackingNumber ??
-          extractTrackingNumber(toRecord(readyResponse.response)) ??
-          extractTrackingNumber(readyResult ?? {})
-      };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Shopee shipping document failed.";
       if (!isRetryableDocumentNotReadyError(message)) {

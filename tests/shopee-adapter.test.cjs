@@ -4,6 +4,7 @@ const {
   isShipOrderSelectionError,
   parseShopeeRefreshTokenResponse,
   selectShopeePackageNumber,
+  selectShopeeShippingDocumentTypes,
   selectShopeeShippingDocumentType
 } = require("../lib/adapters/shopee.ts");
 
@@ -73,6 +74,22 @@ async function run() {
     });
 
     assert.equal(result, "NORMAL_AIR_WAYBILL");
+  }
+
+  {
+    const result = selectShopeeShippingDocumentTypes({
+      response: {
+        result_list: [
+          {
+            order_sn: "260404ABC",
+            suggest_shipping_document_type: "THERMAL_AIR_WAYBILL",
+            selectable_shipping_document_type: ["NORMAL_AIR_WAYBILL", "THERMAL_AIR_WAYBILL"]
+          }
+        ]
+      }
+    });
+
+    assert.deepEqual(result, ["THERMAL_AIR_WAYBILL", "NORMAL_AIR_WAYBILL"]);
   }
 
   {
