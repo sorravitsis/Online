@@ -633,6 +633,26 @@ async function fetchShopeeShippingDocument(
         });
 
         try {
+          try {
+            const existingPdf = await shopeeDownloadDocument(
+              env.shopee.downloadShippingDocumentPath(),
+              {
+                body: {
+                  order_list: orderList
+                },
+                accessToken,
+                shopId
+              }
+            );
+
+            return {
+              pdf: existingPdf,
+              trackingNumber: trackingNumber ?? orderId
+            };
+          } catch {
+            // Ignore direct-download failures here and try create_shipping_document next.
+          }
+
           let createFailedBecauseDocumentAlreadyExists = false;
           const createResponse = await shopeeFetch<ShopeeResponseEnvelope>(
             env.shopee.createShippingDocumentPath(),
