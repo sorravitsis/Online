@@ -28,6 +28,10 @@ const tests = [
     run: require("./lazada.test.cjs").run
   },
   {
+    name: "lazada adapter helpers",
+    run: require("./lazada-adapter.test.cjs").run
+  },
+  {
     name: "batch helpers",
     run: require("./batch.test.cjs").run
   },

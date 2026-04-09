@@ -1,0 +1,438 @@
+{
+  "name": "lazada_orders_sync",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0e3cb340-b5b6-4e4a-90ef-61d504cf91f4",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "efab4b1f-c604-4a20-9ae1-1c44ff1bdb06",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1872,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "25451831-f60c-49b8-b0ef-b07165a3545b",
+              "name": "lazadaSellerId",
+              "type": "string",
+              "value": "100005102"
+            },
+            {
+              "id": "0b759a4e-b684-42a0-b8cf-5b319f82cbf8",
+              "name": "appKey",
+              "type": "string",
+              "value": "135907"
+            },
+            {
+              "id": "685cb38a-f845-44d2-97e9-e5c664f8cd63",
+              "name": "appSecret",
+              "type": "string",
+              "value": "REPLACE_WITH_LAZADA_APP_SECRET"
+            },
+            {
+              "id": "7fb6be97-b665-4f75-af01-8a630ca60c38",
+              "name": "supabaseUrl",
+              "type": "string",
+              "value": "REPLACE_WITH_SUPABASE_URL"
+            },
+            {
+              "id": "9c390ee5-c6f4-4b61-b170-45e72435f738",
+              "name": "serviceRoleKey",
+              "type": "string",
+              "value": "REPLACE_WITH_SUPABASE_SERVICE_ROLE_KEY"
+            },
+            {
+              "id": "cdf1ea2f-c438-470c-ad32-f48b026d6cbc",
+              "name": "lookbackDays",
+              "type": "string",
+              "value": "3"
+            },
+            {
+              "id": "dd6895f0-e511-457e-bab0-b0fbb6faa2e0",
+              "name": "lazadaApiBase",
+              "type": "string",
+              "value": "https://api.lazada.co.th/rest"
+            },
+            {
+              "id": "d18f1308-6db6-4a5f-b11e-93f4dc1cbaf2",
+              "name": "lazadaAuthBase",
+              "type": "string",
+              "value": "https://auth.lazada.com"
+            }
+          ]
+        }
+      },
+      "id": "c09de750-642e-4f9a-9983-9c77d2908f12",
+      "name": "Workflow Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.supabaseUrl + '/rest/v1/stores?platform=eq.lazada&shop_id=eq.' + encodeURIComponent($json.lazadaSellerId) + '&select=id,name,shop_id,access_token,refresh_token,token_expiry,is_active' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.serviceRoleKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "78b1c8d2-ef2a-4ce4-a98f-d372f7d99878",
+      "name": "Get Lazada Store From Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1328,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Workflow Config').first().json;\nconst rows = $input.first().json;\nconst store = Array.isArray(rows) ? rows[0] : rows;\n\nif (!store?.id) {\n  throw new Error(`No Lazada store row found for seller ${config.lazadaSellerId}. Insert or update it in Supabase first.`);\n}\n\nif (!store.is_active) {\n  throw new Error(`Lazada store ${store.name || store.shop_id} is disabled in Supabase.`);\n}\n\nif (!store.refresh_token) {\n  throw new Error(`Lazada store ${store.name || store.shop_id} is missing refresh_token.`);\n}\n\nreturn [{\n  json: {\n    ...config,\n    storeId: store.id,\n    storeName: store.name,\n    shopId: store.shop_id,\n    accessToken: store.access_token || '',\n    refreshToken: store.refresh_token,\n    tokenExpiry: store.token_expiry || null\n  }\n}];"
+      },
+      "id": "72a62a0d-c5f6-4fa3-b38f-06f3f7dd9aa3",
+      "name": "Normalize Lazada Store",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1056,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function rightRotate(value, amount) {\n  return (value >>> amount) | (value << (32 - amount));\n}\n\nfunction sha256(ascii) {\n  const mathPow = Math.pow;\n  const maxWord = mathPow(2, 32);\n  let result = '';\n  const words = [];\n  const asciiBitLength = ascii.length * 8;\n  let hash = [];\n  let k = [];\n  let primeCounter = 0;\n  const isComposite = {};\n\n  for (let candidate = 2; primeCounter < 64; candidate++) {\n    if (!isComposite[candidate]) {\n      for (let i = 0; i < 313; i += candidate) {\n        isComposite[i] = candidate;\n      }\n      hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;\n      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;\n    }\n  }\n\n  ascii += '\\x80';\n  while ((ascii.length % 64) - 56) ascii += '\\x00';\n  for (let i = 0; i < ascii.length; i++) {\n    const j = ascii.charCodeAt(i);\n    words[i >> 2] |= j << (((3 - i) % 4) * 8);\n  }\n  words[words.length] = (asciiBitLength / maxWord) | 0;\n  words[words.length] = asciiBitLength;\n\n  for (let j = 0; j < words.length;) {\n    const w = words.slice(j, (j += 16));\n    const oldHash = hash.slice(0);\n\n    for (let i = 0; i < 64; i++) {\n      const w15 = w[i - 15];\n      const w2 = w[i - 2];\n      const a = hash[0];\n      const e = hash[4];\n      const temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] + (w[i] = i < 16 ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);\n      const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));\n      hash = [(temp1 + temp2) | 0].concat(hash);\n      hash[4] = (hash[4] + temp1) | 0;\n      hash.pop();\n    }\n\n    for (let i = 0; i < 8; i++) {\n      hash[i] = (hash[i] + oldHash[i]) | 0;\n    }\n  }\n\n  for (let i = 0; i < 8; i++) {\n    for (let j = 3; j + 1; j--) {\n      const b = (hash[i] >> (j * 8)) & 255;\n      result += ((b < 16 ? '0' : '') + b.toString(16));\n    }\n  }\n\n  return result;\n}\n\nfunction hexToBinary(hex) {\n  let output = '';\n  for (let i = 0; i < hex.length; i += 2) {\n    output += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));\n  }\n  return output;\n}\n\nfunction hmacSha256(key, message) {\n  const blockSize = 64;\n  let normalizedKey = key;\n\n  if (normalizedKey.length > blockSize) {\n    normalizedKey = hexToBinary(sha256(normalizedKey));\n  }\n\n  if (normalizedKey.length < blockSize) {\n    normalizedKey = normalizedKey.padEnd(blockSize, '\\x00');\n  }\n\n  let oKeyPad = '';\n  let iKeyPad = '';\n\n  for (let i = 0; i < blockSize; i++) {\n    const code = normalizedKey.charCodeAt(i);\n    oKeyPad += String.fromCharCode(code ^ 0x5c);\n    iKeyPad += String.fromCharCode(code ^ 0x36);\n  }\n\n  return sha256(oKeyPad + hexToBinary(sha256(iKeyPad + message))).toUpperCase();\n}\n\nconst config = $input.first().json;\nconst pagePath = '/auth/token/refresh';\nconst timestamp = Date.now().toString();\nconst params = {\n  app_key: config.appKey,\n  refresh_token: config.refreshToken,\n  sign_method: 'sha256',\n  timestamp\n};\nconst sortedKeys = Object.keys(params).sort();\nconst concatenated = sortedKeys.map((key) => key + params[key]).join('');\nconst sign = hmacSha256(config.appSecret, pagePath + concatenated);\nconst query = sortedKeys.map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');\nconst requestUrl = `${config.lazadaAuthBase}/rest${pagePath}?${query}&sign=${sign}`;\n\nreturn [{\n  json: {\n    ...config,\n    refreshRequestUrl: requestUrl\n  }\n}];"
+      },
+      "id": "5c351c39-e830-436c-aec0-75b522f4c357",
+      "name": "Build Lazada Refresh URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.refreshRequestUrl }}",
+        "options": {}
+      },
+      "id": "3b2058ff-f08f-43f9-9c59-ff0e0ca6111d",
+      "name": "Refresh Lazada Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const refresh = $input.first().json;\nconst store = $('Normalize Lazada Store').first().json;\n\nif (!refresh.access_token) {\n  throw new Error(refresh.message || 'Lazada refresh token did not return access_token');\n}\n\nconst expiresIn = Number(refresh.expires_in || 0);\nconst tokenExpiry = expiresIn > 0 ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;\n\nreturn [{\n  json: {\n    ...store,\n    accessToken: refresh.access_token,\n    refreshToken: refresh.refresh_token || store.refreshToken,\n    tokenExpiry,\n    expiresIn,\n    sellerId: store.shopId\n  }\n}];"
+      },
+      "id": "0841ef00-3ee0-494d-b8c8-4ec761627057",
+      "name": "Normalize Lazada Token Set",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $json.supabaseUrl + '/rest/v1/stores?id=eq.' + encodeURIComponent($json.storeId) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { access_token: $json.accessToken, refresh_token: $json.refreshToken, token_expiry: $json.tokenExpiry, is_active: true } }}",
+        "options": {}
+      },
+      "id": "5a0c8fdb-1efd-4eef-bb9f-1654cb7776f0",
+      "name": "Update Lazada Tokens In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function rightRotate(value, amount) {\n  return (value >>> amount) | (value << (32 - amount));\n}\n\nfunction sha256(ascii) {\n  const mathPow = Math.pow;\n  const maxWord = mathPow(2, 32);\n  let result = '';\n  const words = [];\n  const asciiBitLength = ascii.length * 8;\n  let hash = [];\n  let k = [];\n  let primeCounter = 0;\n  const isComposite = {};\n\n  for (let candidate = 2; primeCounter < 64; candidate++) {\n    if (!isComposite[candidate]) {\n      for (let i = 0; i < 313; i += candidate) {\n        isComposite[i] = candidate;\n      }\n      hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;\n      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;\n    }\n  }\n\n  ascii += '\\x80';\n  while ((ascii.length % 64) - 56) ascii += '\\x00';\n  for (let i = 0; i < ascii.length; i++) {\n    const j = ascii.charCodeAt(i);\n    words[i >> 2] |= j << (((3 - i) % 4) * 8);\n  }\n  words[words.length] = (asciiBitLength / maxWord) | 0;\n  words[words.length] = asciiBitLength;\n\n  for (let j = 0; j < words.length;) {\n    const w = words.slice(j, (j += 16));\n    const oldHash = hash.slice(0);\n\n    for (let i = 0; i < 64; i++) {\n      const w15 = w[i - 15];\n      const w2 = w[i - 2];\n      const a = hash[0];\n      const e = hash[4];\n      const temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] + (w[i] = i < 16 ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);\n      const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));\n      hash = [(temp1 + temp2) | 0].concat(hash);\n      hash[4] = (hash[4] + temp1) | 0;\n      hash.pop();\n    }\n\n    for (let i = 0; i < 8; i++) {\n      hash[i] = (hash[i] + oldHash[i]) | 0;\n    }\n  }\n\n  for (let i = 0; i < 8; i++) {\n    for (let j = 3; j + 1; j--) {\n      const b = (hash[i] >> (j * 8)) & 255;\n      result += ((b < 16 ? '0' : '') + b.toString(16));\n    }\n  }\n\n  return result;\n}\n\nfunction hexToBinary(hex) {\n  let output = '';\n  for (let i = 0; i < hex.length; i += 2) {\n    output += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));\n  }\n  return output;\n}\n\nfunction hmacSha256(key, message) {\n  const blockSize = 64;\n  let normalizedKey = key;\n\n  if (normalizedKey.length > blockSize) {\n    normalizedKey = hexToBinary(sha256(normalizedKey));\n  }\n\n  if (normalizedKey.length < blockSize) {\n    normalizedKey = normalizedKey.padEnd(blockSize, '\\x00');\n  }\n\n  let oKeyPad = '';\n  let iKeyPad = '';\n\n  for (let i = 0; i < blockSize; i++) {\n    const code = normalizedKey.charCodeAt(i);\n    oKeyPad += String.fromCharCode(code ^ 0x5c);\n    iKeyPad += String.fromCharCode(code ^ 0x36);\n  }\n\n  return sha256(oKeyPad + hexToBinary(sha256(iKeyPad + message))).toUpperCase();\n}\n\nconst config = $('Normalize Lazada Token Set').first().json;\nconst pagePath = '/orders/get';\nconst now = new Date();\nconst updateBefore = now.toISOString().slice(0, 19) + '+07:00';\nconst updateAfterDate = new Date(now.getTime() - Number(config.lookbackDays || '3') * 24 * 60 * 60 * 1000);\nconst updateAfter = updateAfterDate.toISOString().slice(0, 19) + '+07:00';\nconst timestamp = Date.now().toString();\nconst params = {\n  access_token: config.accessToken,\n  app_key: config.appKey,\n  limit: '100',\n  offset: '0',\n  sign_method: 'sha256',\n  sort_direction: 'DESC',\n  timestamp,\n  update_after: updateAfter,\n  update_before: updateBefore\n};\nconst sortedKeys = Object.keys(params).sort();\nconst concatenated = sortedKeys.map((key) => key + params[key]).join('');\nconst sign = hmacSha256(config.appSecret, pagePath + concatenated);\nconst query = sortedKeys.map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');\nconst requestUrl = `${config.lazadaApiBase}${pagePath}?${query}&sign=${sign}`;\n\nreturn [{\n  json: {\n    ...config,\n    ordersRequestUrl: requestUrl,\n    updateAfter,\n    updateBefore\n  }\n}];"
+      },
+      "id": "1f329f8d-2400-4832-b355-270f7f55a227",
+      "name": "Build Lazada Orders URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.ordersRequestUrl }}",
+        "options": {}
+      },
+      "id": "8a15dfd2-cad5-462d-b6d7-3138cb7a7590",
+      "name": "Lazada Get Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Normalize Lazada Token Set').first().json;\nconst response = $input.first().json;\nconst data = response.data || response.result?.data || response.result || response;\nconst orders = Array.isArray(data?.orders)\n  ? data.orders\n  : Array.isArray(data)\n    ? data\n    : Array.isArray(data?.order_list)\n      ? data.order_list\n      : [];\n\nif (!Array.isArray(orders) || orders.length === 0) {\n  return [];\n}\n\nfunction pickBuyerName(order) {\n  const shipping = order.address_shipping || order.shipping_address || {};\n  const fromOrder = [order.customer_first_name, order.customer_last_name].filter(Boolean).join(' ').trim();\n  const fromShipping = [shipping.first_name, shipping.last_name].filter(Boolean).join(' ').trim();\n  return fromOrder || fromShipping || order.customer_name || order.buyer_name || null;\n}\n\nreturn orders.map((order) => {\n  const platformOrderId = String(order.order_id || order.orderId || '').trim();\n  if (!platformOrderId) {\n    return null;\n  }\n\n  const body = {\n    store_id: config.storeId,\n    platform_order_id: platformOrderId,\n    barcode_value: platformOrderId,\n    buyer_name: pickBuyerName(order),\n    items_json: [],\n    awb_status: 'pending'\n  };\n\n  return {\n    json: {\n      ...body,\n      supabaseUrl: config.supabaseUrl,\n      serviceRoleKey: config.serviceRoleKey,\n      requestUrl: `${config.supabaseUrl}/rest/v1/orders?on_conflict=store_id,platform_order_id`,\n      requestBody: JSON.stringify(body)\n    }\n  };\n}).filter(Boolean);"
+      },
+      "id": "fa36477d-26dd-4d55-ba65-6416df59c94e",
+      "name": "Map Lazada Orders For Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.serviceRoleKey }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "5950b464-8e75-4b03-bf84-3d563f6682bd",
+      "name": "Upsert Lazada Orders To Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Get Lazada Store From Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lazada Store From Supabase": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lazada Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lazada Store": {
+      "main": [
+        [
+          {
+            "node": "Build Lazada Refresh URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Lazada Refresh URL": {
+      "main": [
+        [
+          {
+            "node": "Refresh Lazada Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh Lazada Token": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lazada Token Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lazada Token Set": {
+      "main": [
+        [
+          {
+            "node": "Update Lazada Tokens In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Lazada Orders URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Lazada Orders URL": {
+      "main": [
+        [
+          {
+            "node": "Lazada Get Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lazada Get Orders": {
+      "main": [
+        [
+          {
+            "node": "Map Lazada Orders For Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Lazada Orders For Supabase": {
+      "main": [
+        [
+          {
+            "node": "Upsert Lazada Orders To Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "73777d3d-f050-42c6-9db8-9a3a6ff7a1a1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

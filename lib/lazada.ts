@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
+import { createAdminClient } from "@/lib/supabase";
+import type { StoreRow } from "@/lib/types";
 
 const encoder = new TextEncoder();
 const LAZADA_STATE_AUDIENCE = "lazada-connect";
@@ -30,6 +32,13 @@ type LazadaSellerEnvelope = {
   data?: Record<string, unknown>;
   code?: string | number;
   message?: string;
+};
+
+type LazadaApiCallOptions = {
+  accessToken?: string;
+  method?: "GET" | "POST";
+  payloadParamName?: string;
+  payload?: unknown;
 };
 
 export type LazadaConnectedStore = {
@@ -101,10 +110,7 @@ export async function callLazadaApi(
   baseUrl: string,
   path: string,
   params: Record<string, string>,
-  options?: {
-    accessToken?: string;
-    method?: "GET" | "POST";
-  }
+  options?: LazadaApiCallOptions
 ) {
   const requestUrl = new URL(
     `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
@@ -118,6 +124,10 @@ export async function callLazadaApi(
 
   if (options?.accessToken) {
     signedParams.access_token = options.accessToken;
+  }
+
+  if (options?.payloadParamName && options.payload !== undefined) {
+    signedParams[options.payloadParamName] = JSON.stringify(options.payload);
   }
 
   signedParams.sign = signLazadaRequest(
@@ -187,6 +197,138 @@ function asString(value: unknown) {
   }
 
   return String(value);
+}
+
+function getLazadaEnvelopeMessage(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    asString(record.message) ??
+    asString(record.msg) ??
+    asString(record.error_message) ??
+    asString(record.error)
+  );
+}
+
+function getLazadaEnvelopeCode(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  return asString(record.code) ?? asString(record.error_code) ?? asString(record.err_code);
+}
+
+export function unwrapLazadaResult<T>(
+  envelope: Record<string, unknown>,
+  context: string
+) {
+  const code = getLazadaEnvelopeCode(envelope) ?? "0";
+  if (code !== "0") {
+    throw new Error(
+      `${context}: ${getLazadaEnvelopeMessage(envelope) ?? `Lazada API failed with code ${code}`}`
+    );
+  }
+
+  const result = envelope.result;
+  if (!result || typeof result !== "object") {
+    return (envelope.data ?? envelope) as T;
+  }
+
+  const resultRecord = result as Record<string, unknown>;
+  if (resultRecord.success === false) {
+    throw new Error(
+      `${context}: ${getLazadaEnvelopeMessage(resultRecord) ?? "Lazada returned an unsuccessful result envelope."}`
+    );
+  }
+
+  return (resultRecord.data ?? resultRecord) as T;
+}
+
+async function persistLazadaTokenSet(
+  storeId: string,
+  token: {
+    accessToken: string;
+    refreshToken: string | null;
+    tokenExpiry: string | null;
+  }
+) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("stores")
+    .update({
+      access_token: token.accessToken,
+      refresh_token: token.refreshToken,
+      token_expiry: token.tokenExpiry
+    })
+    .eq("id", storeId);
+
+  if (error) {
+    throw new Error(`Unable to persist Lazada token: ${error.message}`);
+  }
+}
+
+export async function refreshLazadaAccessToken(store: StoreRow) {
+  if (!store.refresh_token) {
+    throw new Error("Lazada store is missing a refresh token.");
+  }
+
+  const json = (await callLazadaApi(
+    `${env.lazada.authBase().replace(/\/$/, "")}/rest`,
+    "/auth/token/refresh",
+    {
+      refresh_token: store.refresh_token
+    },
+    {
+      method: "GET"
+    }
+  )) as LazadaTokenEnvelope;
+
+  if (!json.access_token) {
+    throw new Error(json.message ?? "lazada_token_refresh_failed");
+  }
+
+  const expiresIn = Number(json.expires_in ?? 0);
+  const refreshed = {
+    accessToken: json.access_token,
+    refreshToken: json.refresh_token ?? store.refresh_token,
+    tokenExpiry:
+      expiresIn > 0 ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
+  };
+
+  await persistLazadaTokenSet(store.id, refreshed);
+  return refreshed;
+}
+
+export async function ensureLazadaAccessToken(store: StoreRow) {
+  if (!store.access_token) {
+    throw new Error("Lazada store is missing an access token.");
+  }
+
+  if (!store.token_expiry) {
+    return {
+      accessToken: store.access_token,
+      refreshToken: store.refresh_token,
+      tokenExpiry: store.token_expiry
+    };
+  }
+
+  const expiresAt = new Date(store.token_expiry);
+  const refreshAt = new Date(expiresAt.getTime() - 10 * 60 * 1000);
+
+  if (Number.isNaN(expiresAt.getTime()) || refreshAt > new Date()) {
+    return {
+      accessToken: store.access_token,
+      refreshToken: store.refresh_token,
+      tokenExpiry: store.token_expiry
+    };
+  }
+
+  return refreshLazadaAccessToken(store);
 }
 
 function resolveLazadaSellerIdentity(
