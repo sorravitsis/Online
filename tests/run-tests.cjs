@@ -12,6 +12,10 @@ const tests = [
     run: require("./order-filters.test.cjs").run
   },
   {
+    name: "orders helpers",
+    run: require("./orders.test.cjs").run
+  },
+  {
     name: "scan helpers",
     run: require("./scan.test.cjs").run
   },

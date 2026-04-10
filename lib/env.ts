@@ -75,4 +75,5 @@ export const env = {
 
 export const LOCK_TTL_SECONDS = 120;
 export const MAX_BATCH_SIZE = 200;
-export const MAX_PAGE_SIZE = 200;
+export const MAX_PAGE_SIZE = 1000;
+export const ORDER_RETENTION_DAYS = 7;

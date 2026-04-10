@@ -15,7 +15,7 @@ type OrderFiltersInput = {
 };
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 1000;
 const DEFAULT_STATUS = "pending";
 const DEFAULT_TIME_ZONE = "Asia/Bangkok";
 

@@ -1,12 +1,44 @@
+import { ORDER_RETENTION_DAYS } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase";
 import type { OrderFilters } from "@/lib/order-filters";
 import type { OrderWithStore } from "@/lib/types";
 
 const PAGE_SIZE = 50;
+const BANGKOK_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 type ListOrdersFilters = Partial<OrderFilters> & {
   barcode?: string;
 };
+
+export function getBangkokDateRange(date: string) {
+  const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    throw new Error(`Invalid date filter: ${date}`);
+  }
+
+  const startUtcMs = Date.UTC(year, month - 1, day) - BANGKOK_UTC_OFFSET_MS;
+  const endUtcMs = Date.UTC(year, month - 1, day + 1) - BANGKOK_UTC_OFFSET_MS - 1;
+
+  return {
+    start: new Date(startUtcMs).toISOString(),
+    end: new Date(endUtcMs).toISOString()
+  };
+}
+
+export function getOrderRetentionCutoff(now = new Date()) {
+  return new Date(
+    now.getTime() - ORDER_RETENTION_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString();
+}
 
 export async function listOrders(filters: ListOrdersFilters) {
   const supabase = createAdminClient();
@@ -36,9 +68,8 @@ export async function listOrders(filters: ListOrdersFilters) {
   }
 
   if (filters.date) {
-    const start = new Date(`${filters.date}T00:00:00.000Z`);
-    const end = new Date(`${filters.date}T23:59:59.999Z`);
-    query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
+    const { start, end } = getBangkokDateRange(filters.date);
+    query = query.gte("created_at", start).lte("created_at", end);
   }
 
   const { data, error, count } = await query.range(from, to);

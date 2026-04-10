@@ -23,6 +23,10 @@ export default async function WarehousePage({
     page:
       typeof searchParams?.page === "string"
         ? Number.parseInt(searchParams.page, 10)
+        : undefined,
+    limit:
+      typeof searchParams?.limit === "string"
+        ? Number.parseInt(searchParams.limit, 10)
         : undefined
   });
 

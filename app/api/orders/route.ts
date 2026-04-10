@@ -9,9 +9,9 @@ export async function GET(request: Request) {
 
   try {
     const rawPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
-    const rawLimit = Number.parseInt(searchParams.get("limit") ?? "50", 10);
+    const rawLimit = Number.parseInt(searchParams.get("limit") ?? "1000", 10);
     const page = Number.isFinite(rawPage) && rawPage >= 1 ? Math.min(rawPage, 1000) : 1;
-    const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, MAX_PAGE_SIZE) : 50;
+    const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, MAX_PAGE_SIZE) : 1000;
 
     const filters = normalizeOrderFilters({
       status: searchParams.get("status") ?? (barcode ? "all" : undefined),
