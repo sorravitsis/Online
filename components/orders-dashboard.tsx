@@ -153,12 +153,17 @@ export function OrdersDashboard({
   return (
     <main className="min-h-screen px-6 py-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
+        <header className="flex flex-col gap-4 rounded-3xl border border-red-50 bg-white p-6 shadow-xl shadow-red-100/40 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/70">
-                Warehouse Dashboard
-              </p>
+              <div className="flex items-center gap-2.5">
+                <span className="rounded-lg bg-brand-red px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-sm shadow-red-200">
+                  SiS
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-brand-ink">
+                  Warehouse
+                </span>
+              </div>
               <span
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
                   realtimeEnabled
@@ -174,10 +179,10 @@ export function OrdersDashboard({
                 {realtimeEnabled ? "Realtime connected" : "Realtime unavailable"}
               </span>
             </div>
-            <h1 className="text-3xl font-semibold text-brand-ink">
+            <h1 className="text-3xl font-bold tracking-tight text-brand-ink">
               AWB order queue
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-500">
               Filter by store, status, or work date, then let realtime keep the
               queue in sync while the team prints.
             </p>
@@ -186,7 +191,7 @@ export function OrdersDashboard({
           <div className="flex flex-wrap gap-3">
             <Link
               href="/scan"
-              className="rounded-full bg-brand-blue px-5 py-3 text-sm font-medium text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+              className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700"
             >
               Scan Mode
             </Link>
@@ -205,7 +210,7 @@ export function OrdersDashboard({
           </div>
         </header>
 
-        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
           <form className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
             <label className="space-y-2 text-sm font-medium text-slate-700">
               Status
@@ -266,7 +271,7 @@ export function OrdersDashboard({
 
             <div className="flex items-end gap-3">
               <button
-                className="rounded-full bg-brand-ink px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                 disabled={isPending}
                 type="submit"
               >
@@ -289,7 +294,7 @@ export function OrdersDashboard({
           </form>
         </section>
 
-        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-brand-ink">Orders</h2>

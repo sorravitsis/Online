@@ -261,15 +261,20 @@ export function BatchDashboard({
   return (
     <main className="min-h-screen px-6 py-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/70">
-              Batch Print
-            </p>
-            <h1 className="text-3xl font-semibold text-brand-ink">
-              Queue-based batch execution
+        <header className="flex flex-col gap-4 rounded-3xl border border-red-50 bg-white p-6 shadow-xl shadow-red-100/40 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="rounded-lg bg-brand-red px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-sm shadow-red-200">
+                SiS
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-brand-ink">
+                Warehouse
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-brand-ink">
+              Batch print
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-500">
               Select pending orders, respect the store batch cap, and use Undo
               before the sequential print run begins.
             </p>
@@ -293,7 +298,7 @@ export function BatchDashboard({
           </div>
         </header>
 
-        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
           <form
             className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]"
             onSubmit={(event) => {
@@ -343,7 +348,7 @@ export function BatchDashboard({
 
             <div className="flex items-end gap-3">
               <button
-                className="rounded-full bg-brand-ink px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                 disabled={isPending}
                 type="submit"
               >
@@ -366,10 +371,10 @@ export function BatchDashboard({
           </form>
         </section>
 
-        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-brand-ink">Pending orders</h2>
+              <h2 className="text-lg font-bold text-brand-ink">Pending orders</h2>
               <p className="text-sm text-slate-500">
                 {selectedOrderIds.length} / {selectionLimit} selected. The cap uses
                 the lowest batch limit among selected stores for safety.
@@ -504,10 +509,10 @@ export function BatchDashboard({
           </div>
         </section>
 
-        <section className="rounded-3xl border bg-white/85 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
+        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-brand-ink">Batch summary</h2>
+              <h2 className="text-lg font-bold text-brand-ink">Batch summary</h2>
               <p className="text-sm text-slate-500">
                 Printed {summary.printed}, queued {summary.queued}, failed {summary.failed}
               </p>

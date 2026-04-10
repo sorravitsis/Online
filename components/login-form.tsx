@@ -80,7 +80,7 @@ export function LoginForm() {
       ) : null}
 
       <button
-        className="w-full rounded-full bg-brand-ink px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="w-full rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         disabled={isSubmitting}
         type="submit"
       >

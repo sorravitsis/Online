@@ -151,16 +151,21 @@ export function ScanDashboard() {
       className="flex min-h-screen items-center justify-center px-6 py-12"
       onClick={refocusScannerInput}
     >
-      <section className="w-full max-w-3xl rounded-3xl border bg-white/85 p-8 shadow-xl shadow-slate-200/60 backdrop-blur">
+      <section className="w-full max-w-3xl rounded-3xl border border-red-50 bg-white p-8 shadow-2xl shadow-red-100/40">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/70">
-              Scan Mode
-            </p>
-            <h1 className="text-3xl font-semibold text-brand-ink">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="rounded-lg bg-brand-red px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-sm shadow-red-200">
+                SiS
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-brand-ink">
+                Warehouse
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-brand-ink">
               Scan to print
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-500">
               Keep the scanner pointed at the hidden capture field. The scan
               lookup accepts either the barcode field or the platform order ID,
               then triggers the 1:1 print path automatically.
@@ -204,7 +209,7 @@ export function ScanDashboard() {
 
           <div className="flex flex-wrap gap-3">
             <button
-              className="rounded-full bg-brand-blue px-5 py-3 text-sm font-medium text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               disabled={isSubmitting || !barcode.trim()}
               type="submit"
             >

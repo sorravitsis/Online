@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Unified AWB Platform",
+  title: "SiS Warehouse",
   description: "Warehouse dashboard for scanning and printing AWB labels."
 };
 
