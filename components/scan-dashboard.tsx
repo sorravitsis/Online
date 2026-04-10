@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { readJsonResponse } from "@/lib/http";
-import { mapScanError, mapScanSuccess, summarizeItems } from "@/lib/scan";
+import { extractOrderItems, mapScanError, mapScanSuccess } from "@/lib/scan";
 import type { OrderWithStore } from "@/lib/types";
 
 type ScanResult =
@@ -248,35 +248,59 @@ export function ScanDashboard() {
             {activeOrder ? (
               <div className="mt-4 space-y-3 text-sm text-slate-600">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Order
-                  </p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Order</p>
                   <p className="mt-1 text-base font-semibold text-brand-ink">
                     {activeOrder.platform_order_id}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Store
-                  </p>
-                  <p className="mt-1">{activeOrder.store?.name ?? "Unknown store"}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Store</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-xs font-semibold uppercase ${
+                        activeOrder.store?.platform === "lazada"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {activeOrder.store?.platform ?? "unknown"}
+                    </span>
+                    <span>{activeOrder.store?.name ?? "Unknown store"}</span>
+                  </div>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Buyer
-                  </p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Buyer</p>
                   <p className="mt-1">{activeOrder.buyer_name ?? "-"}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Items
+                    Items ({Array.isArray(activeOrder.items_json) ? activeOrder.items_json.length : 0})
                   </p>
-                  <p className="mt-1">{summarizeItems(activeOrder.items_json)}</p>
+                  {(() => {
+                    const items = extractOrderItems(activeOrder.items_json);
+                    const rtsItems = items.filter((item) => item.trackingCode ?? item.packageId);
+                    if (items.length === 0) {
+                      return <p className="mt-1 text-slate-400">No item details</p>;
+                    }
+                    return (
+                      <div className="mt-1 space-y-1">
+                        {items.map((item, i) => (
+                          <div key={i} className="flex items-start justify-between gap-2">
+                            <span className="text-brand-ink">{item.name}</span>
+                            <span className="shrink-0 text-slate-400">×{item.qty}</span>
+                          </div>
+                        ))}
+                        {rtsItems.length > 0 && (
+                          <p className="mt-2 text-xs font-medium text-emerald-600">
+                            RTS · {rtsItems[0]?.trackingCode ?? rtsItems[0]?.packageId}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Current status
-                  </p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Status</p>
                   <p className="mt-1 capitalize">{activeOrder.awb_status}</p>
                 </div>
               </div>

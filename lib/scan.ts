@@ -65,3 +65,60 @@ export function summarizeItems(items: unknown) {
 
   return `${names[0]} +${names.length - 1} more`;
 }
+
+export type ItemDisplay = {
+  name: string;
+  qty: number;
+  sku?: string;
+  packageId?: string;
+  trackingCode?: string;
+};
+
+function str(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function num(value: unknown): number | undefined {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
+
+export function extractOrderItems(items: unknown): ItemDisplay[] {
+  if (!Array.isArray(items) || items.length === 0) return [];
+
+  const result: ItemDisplay[] = [];
+
+  for (const entry of items) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+
+    const name =
+      str(e.name) ??
+      str(e.item_name) ??
+      str(e.product_name) ??
+      "Unknown item";
+
+    const qty =
+      num(e.quantity) ??
+      num(e.model_quantity_purchased) ??
+      num(e.qty) ??
+      1;
+
+    result.push({
+      name,
+      qty,
+      sku: str(e.sku) ?? str(e.model_sku),
+      packageId: str(e.package_id) ?? str(e.packageId),
+      trackingCode:
+        str(e.tracking_code) ??
+        str(e.tracking_no) ??
+        str(e.trackingCode)
+    });
+  }
+
+  return result;
+}
