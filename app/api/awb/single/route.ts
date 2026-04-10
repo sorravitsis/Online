@@ -1,5 +1,6 @@
 import { getCurrentSession, getSessionIdentifier } from "@/lib/auth";
 import { failure, success } from "@/lib/api";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { processSingleOrderPrint } from "@/lib/print-workflow";
 
 export async function POST(request: Request) {
@@ -21,10 +22,12 @@ export async function POST(request: Request) {
       return failure("unauthorized", 401);
     }
 
-    const result = await processSingleOrderPrint(
-      body.orderId,
-      getSessionIdentifier(session)
-    );
+    const sessionId = getSessionIdentifier(session);
+    if (!checkRateLimit(`awb:single:${sessionId}`, 60, 60_000)) {
+      return failure("too_many_requests", 429);
+    }
+
+    const result = await processSingleOrderPrint(body.orderId, sessionId);
 
     if (result.status === "failed") {
       const status =

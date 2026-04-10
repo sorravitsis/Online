@@ -29,8 +29,9 @@ export async function listOrders(filters: ListOrdersFilters) {
   }
 
   if (filters.barcode) {
+    const sanitized = filters.barcode.replace(/[,.()"'\\]/g, "");
     query = query.or(
-      `barcode_value.eq.${filters.barcode},platform_order_id.eq.${filters.barcode}`
+      `barcode_value.eq.${sanitized},platform_order_id.eq.${sanitized}`
     );
   }
 

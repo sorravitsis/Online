@@ -5,6 +5,7 @@ import {
   unwrapLazadaResult
 } from "@/lib/lazada";
 import { isPdfBuffer } from "@/lib/print-documents";
+import { asArray, asString, toRecord } from "@/lib/adapters/utils";
 import type { OrderWithStore, PlatformAdapter } from "@/lib/types";
 
 type LazadaOrderItem = Record<string, unknown>;
@@ -15,20 +16,6 @@ type LazadaPackItemResult = {
   item_err_code?: string | number;
   msg?: string;
 };
-
-function toRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function asString(value: unknown) {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-function asArray(value: unknown) {
-  return Array.isArray(value) ? value : [];
-}
 
 export function normalizeLazadaOrderItems(envelope: Record<string, unknown>) {
   const data = unwrapLazadaResult<unknown>(envelope, "get_order_items");

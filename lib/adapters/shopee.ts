@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { env } from "@/lib/env";
+import { asString, toRecord } from "@/lib/adapters/utils";
 import type { OrderWithStore, PlatformAdapter } from "@/lib/types";
 
 type ShopeeTokenSet = {
@@ -185,16 +186,6 @@ async function shopeeFetchWithFallback<T>(
   }
 
   throw lastError instanceof Error ? lastError : new Error("Shopee request failed.");
-}
-
-function toRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function asString(value: unknown) {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function asStringArray(value: unknown) {

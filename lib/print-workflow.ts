@@ -1,17 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { env } from "@/lib/env";
+import { env, LOCK_TTL_SECONDS } from "@/lib/env";
 import { detectPrintableDocumentType } from "@/lib/print-documents";
 import { enqueuePrintJob } from "@/lib/print-jobs";
 import { addSeconds } from "@/lib/time";
 import { generateAWB } from "@/lib/awb";
 import { convertPdfToZpl } from "@/lib/labelary";
-import { getOrderById } from "@/lib/orders";
+import { getOrderById, getOrdersByIds } from "@/lib/orders";
 import { printZPL } from "@/lib/print";
 import { createAdminClient } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import type { OrderWithStore, PrintMode, PrintResult } from "@/lib/types";
 
 export type PrintWorkflowDependencies = {
   getOrderById: (orderId: string) => Promise<OrderWithStore | null>;
+  getOrdersByIds: (orderIds: string[]) => Promise<OrderWithStore[]>;
   acquireLock: (orderId: string, lockedBy: string) => Promise<boolean>;
   releaseLock: (orderId: string) => Promise<void>;
   setOrderStatus: (
@@ -63,7 +65,7 @@ async function acquireLock(orderId: string, lockedBy: string) {
       {
         order_id: orderId,
         locked_by: lockedBy,
-        expires_at: addSeconds(new Date(), 120).toISOString()
+        expires_at: addSeconds(new Date(), LOCK_TTL_SECONDS).toISOString()
       },
       {
         onConflict: "order_id",
@@ -133,6 +135,7 @@ async function insertPrintLog(input: {
 
 const defaultDependencies: PrintWorkflowDependencies = {
   getOrderById,
+  getOrdersByIds,
   acquireLock,
   releaseLock,
   setOrderStatus,
@@ -187,9 +190,11 @@ export async function processSingleOrderPrint(
   printedBy: string,
   dependencies: PrintWorkflowDependencies = defaultDependencies
 ): Promise<PrintResult> {
+  logger.info("print:single:start", { orderId, printedBy });
   const order = await dependencies.getOrderById(orderId);
 
   if (!order) {
+    logger.warn("print:single:not_found", { orderId });
     return {
       orderId,
       status: "failed",
@@ -215,6 +220,7 @@ export async function processSingleOrderPrint(
 
   const locked = await dependencies.acquireLock(order.id, printedBy);
   if (!locked) {
+    logger.warn("print:single:lock_failed", { orderId: order.id });
     return {
       orderId,
       status: "failed",
@@ -230,6 +236,7 @@ export async function processSingleOrderPrint(
     const awb = await dependencies.generateAWB(order);
     if (dependencies.getPrintTransport() === "local_queue") {
       await queuePrintJob(order.id, null, null, printedBy, "1to1", awb, dependencies);
+      logger.info("print:single:queued", { orderId: order.id, awb: awb.awbNumber });
 
       return {
         orderId: order.id,
@@ -254,6 +261,7 @@ export async function processSingleOrderPrint(
       awbNumber: awb.awbNumber
     });
 
+    logger.info("print:single:done", { orderId: order.id, awb: awb.awbNumber });
     return {
       orderId: order.id,
       status: "printed",
@@ -262,6 +270,7 @@ export async function processSingleOrderPrint(
   } catch (error) {
     const message = error instanceof Error ? error.message : "print_failed";
     const isRetryableNotReady = isAwbNotReadyError(message);
+    logger.error("print:single:failed", { orderId: order.id, error: message, retryable: isRetryableNotReady });
     await dependencies.setOrderStatus(order.id, {
       awb_status: isRetryableNotReady ? "pending" : "failed"
     });
@@ -292,9 +301,13 @@ export async function processBatchOrderPrint(
 ) {
   const batchId = randomUUID();
   const results: PrintResult[] = [];
+  logger.info("print:batch:start", { batchId, count: orderIds.length, printedBy });
+
+  const allOrders = await dependencies.getOrdersByIds(orderIds);
+  const orderMap = new Map(allOrders.map((o) => [o.id, o]));
 
   for (const orderId of orderIds) {
-    const order = await dependencies.getOrderById(orderId);
+    const order = orderMap.get(orderId) ?? null;
 
     if (!order) {
       results.push({
@@ -324,76 +337,81 @@ export async function processBatchOrderPrint(
       continue;
     }
 
-      try {
-        await dependencies.setOrderStatus(order.id, {
-          awb_status: "printing"
-        });
+    try {
+      await dependencies.setOrderStatus(order.id, {
+        awb_status: "printing"
+      });
 
-        const awb = await dependencies.generateAWB(order);
-        if (dependencies.getPrintTransport() === "local_queue") {
-          await queuePrintJob(
-            order.id,
-            batchId,
-            orderIds.length,
-            printedBy,
-            "batch",
-            awb,
-            dependencies
-          );
-
-          results.push({
-            orderId: order.id,
-            status: "queued",
-            awbNumber: awb.awbNumber
-          });
-          continue;
-        }
-
-        await executeDirectPrint(awb, dependencies);
-        await dependencies.setOrderStatus(order.id, {
-          awb_status: "printed",
-          awb_number: awb.awbNumber,
-          printed_at: new Date().toISOString()
-        });
-        await dependencies.insertPrintLog({
-          orderId: order.id,
+      const awb = await dependencies.generateAWB(order);
+      if (dependencies.getPrintTransport() === "local_queue") {
+        await queuePrintJob(
+          order.id,
           batchId,
-          batchSize: orderIds.length,
+          orderIds.length,
           printedBy,
-          mode: "batch",
-          status: "printed",
-          awbNumber: awb.awbNumber
-        });
+          "batch",
+          awb,
+          dependencies
+        );
 
         results.push({
           orderId: order.id,
-          status: "printed",
+          status: "queued",
           awbNumber: awb.awbNumber
         });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "print_failed";
-        const isRetryableNotReady = isAwbNotReadyError(message);
-        await dependencies.setOrderStatus(order.id, {
-          awb_status: isRetryableNotReady ? "pending" : "failed"
-        });
-        await dependencies.insertPrintLog({
-          orderId: order.id,
-          batchId,
-          batchSize: orderIds.length,
-          printedBy,
-          mode: "batch",
-          status: "failed",
-          error: message
-        });
-        results.push({
-          orderId: order.id,
-          status: "failed",
-          error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
-        });
+        continue;
+      }
+
+      await executeDirectPrint(awb, dependencies);
+      await dependencies.setOrderStatus(order.id, {
+        awb_status: "printed",
+        awb_number: awb.awbNumber,
+        printed_at: new Date().toISOString()
+      });
+      await dependencies.insertPrintLog({
+        orderId: order.id,
+        batchId,
+        batchSize: orderIds.length,
+        printedBy,
+        mode: "batch",
+        status: "printed",
+        awbNumber: awb.awbNumber
+      });
+
+      results.push({
+        orderId: order.id,
+        status: "printed",
+        awbNumber: awb.awbNumber
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "print_failed";
+      const isRetryableNotReady = isAwbNotReadyError(message);
+      logger.error("print:batch:item_failed", { batchId, orderId: order.id, error: message, retryable: isRetryableNotReady });
+      await dependencies.setOrderStatus(order.id, {
+        awb_status: isRetryableNotReady ? "pending" : "failed"
+      });
+      await dependencies.insertPrintLog({
+        orderId: order.id,
+        batchId,
+        batchSize: orderIds.length,
+        printedBy,
+        mode: "batch",
+        status: "failed",
+        error: message
+      });
+      results.push({
+        orderId: order.id,
+        status: "failed",
+        error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
+      });
     } finally {
       await dependencies.releaseLock(order.id);
     }
   }
+
+  const printed = results.filter((r) => r.status === "printed").length;
+  const failed = results.filter((r) => r.status === "failed").length;
+  logger.info("print:batch:done", { batchId, printed, failed, total: orderIds.length });
 
   return {
     batchId,

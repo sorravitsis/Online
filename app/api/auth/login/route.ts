@@ -3,6 +3,7 @@ import { z } from "zod";
 import { failure, success } from "@/lib/api";
 import { signSessionToken } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase";
 
 const schema = z.object({
@@ -10,6 +11,11 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`login:${ip}`, 10, 60_000)) {
+    return failure("too_many_requests", 429);
+  }
+
   const parsed = schema.safeParse(await request.json());
 
   if (!parsed.success) {

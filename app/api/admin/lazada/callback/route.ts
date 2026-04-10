@@ -4,8 +4,13 @@ import { createAdminClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-function redirectToAdmin(status: "connected" | "error", message?: string, store?: string) {
-  const url = new URL("/admin", "http://localhost");
+function redirectToAdmin(
+  requestUrl: string,
+  status: "connected" | "error",
+  message?: string,
+  store?: string
+) {
+  const url = new URL("/admin", requestUrl);
   url.searchParams.set("lazada", status);
 
   if (message) {
@@ -16,7 +21,7 @@ function redirectToAdmin(status: "connected" | "error", message?: string, store?
     url.searchParams.set("store", store);
   }
 
-  return url.pathname + url.search;
+  return url.toString();
 }
 
 export async function GET(request: Request) {
@@ -26,7 +31,7 @@ export async function GET(request: Request) {
 
   if (!code || !state) {
     return NextResponse.redirect(
-      new URL(redirectToAdmin("error", "missing_lazada_callback_params"), request.url)
+      redirectToAdmin(request.url, "error", "missing_lazada_callback_params")
     );
   }
 
@@ -79,17 +84,14 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.redirect(
-      new URL(
-        redirectToAdmin("connected", undefined, connectedStore.name),
-        request.url
-      )
+      redirectToAdmin(request.url, "connected", undefined, connectedStore.name)
     );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "lazada_store_connection_failed";
 
     return NextResponse.redirect(
-      new URL(redirectToAdmin("error", message), request.url)
+      redirectToAdmin(request.url, "error", message)
     );
   }
 }
