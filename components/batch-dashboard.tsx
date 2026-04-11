@@ -4,7 +4,12 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getSelectionLimit, mapBatchError, summarizeBatchResults } from "@/lib/batch";
-import { buildOrderSearchParams, normalizeOrderFilters, type OrderFilters } from "@/lib/order-filters";
+import {
+  buildOrderSearchParams,
+  getDefaultOrderDate,
+  normalizeOrderFilters,
+  type OrderFilters
+} from "@/lib/order-filters";
 import { summarizeItems } from "@/lib/scan";
 import { tryCreateBrowserClient } from "@/lib/supabase";
 import type { OrderWithStore, PrintResult, StoreRow } from "@/lib/types";
@@ -48,6 +53,7 @@ export function BatchDashboard({
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxWorkDate = getDefaultOrderDate();
 
   useEffect(() => {
     setOrders(initialOrders);
@@ -335,6 +341,7 @@ export function BatchDashboard({
               Work date
               <input
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                max={maxWorkDate}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,

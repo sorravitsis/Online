@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 const {
+  getDefaultOrderDate,
   buildOrderSearchParams,
   normalizeOrderFilters
 } = require("../lib/order-filters.ts");
@@ -13,6 +14,17 @@ async function run() {
     assert.equal(filters.page, 1);
     assert.equal(filters.limit, 1000);
     assert.match(filters.date, /^\d{4}-\d{2}-\d{2}$/);
+  }
+
+  {
+    assert.equal(
+      getDefaultOrderDate(new Date("2026-04-10T16:30:00.000Z")),
+      "2026-04-10"
+    );
+    assert.equal(
+      getDefaultOrderDate(new Date("2026-04-10T17:30:00.000Z")),
+      "2026-04-11"
+    );
   }
 
   {

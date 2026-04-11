@@ -27,10 +27,10 @@ function toPositiveInteger(value: number | undefined, fallback: number) {
   return Math.floor(value);
 }
 
-export function getDefaultOrderDate() {
+export function getDefaultOrderDate(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: DEFAULT_TIME_ZONE
-  }).format(new Date());
+  }).format(now);
 }
 
 export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilters {

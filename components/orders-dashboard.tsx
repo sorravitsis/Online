@@ -4,7 +4,12 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { tryCreateBrowserClient } from "@/lib/supabase";
-import { buildOrderSearchParams, normalizeOrderFilters, type OrderFilters } from "@/lib/order-filters";
+import {
+  buildOrderSearchParams,
+  getDefaultOrderDate,
+  normalizeOrderFilters,
+  type OrderFilters
+} from "@/lib/order-filters";
 import { formatOrderStatus } from "@/lib/format";
 import type { OrderWithStore, StoreRow } from "@/lib/types";
 
@@ -60,6 +65,7 @@ export function OrdersDashboard({
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxWorkDate = getDefaultOrderDate();
 
   useEffect(() => {
     setOrders(initialOrders);
@@ -257,7 +263,7 @@ export function OrdersDashboard({
               Work date
               <input
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
-                max={new Date().toISOString().slice(0, 10)}
+                max={maxWorkDate}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
