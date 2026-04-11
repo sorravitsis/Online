@@ -27,11 +27,20 @@ type ScanDashboardProps = {
   stores: StoreRow[];
 };
 
+type StoresApiResponse = {
+  success: boolean;
+  data?: {
+    stores: StoreRow[];
+  };
+  error?: string;
+};
+
 export function ScanDashboard({ stores }: ScanDashboardProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [availableStores, setAvailableStores] = useState(stores);
   const [mode, setMode] = useState<ScanMode>("single");
   const [barcode, setBarcode] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("all");
@@ -46,6 +55,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
   const [bulkDone, setBulkDone] = useState(false);
 
   useEffect(() => {
+    setAvailableStores(stores);
+  }, [stores]);
+
+  useEffect(() => {
     inputRef.current?.focus();
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -58,6 +71,49 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
     };
   }, [router]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function refreshStores() {
+      try {
+        const response = await fetch("/api/admin/stores", {
+          cache: "no-store"
+        });
+        const json = (await response.json()) as StoresApiResponse;
+
+        if (!response.ok || !json.success || !json.data || !isActive) {
+          return;
+        }
+
+        setAvailableStores(json.data.stores);
+      } catch (error) {
+        console.error("Unable to refresh scan stores", error);
+      }
+    }
+
+    void refreshStores();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refreshStores();
+      }
+    }, 15000);
+
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      selectedStoreId !== "all" &&
+      !availableStores.some((store) => store.id === selectedStoreId)
+    ) {
+      setSelectedStoreId("all");
+    }
+  }, [availableStores, selectedStoreId]);
 
   function refocusScannerInput() {
     if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
@@ -331,7 +387,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         </div>
 
         {/* Store filter */}
-        {stores.length > 1 && (
+        {availableStores.length > 1 && (
           <div className="mt-4 flex items-center gap-3">
             <label className="section-label shrink-0">Store</label>
             <select
@@ -344,7 +400,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               }}
             >
               <option value="all">All stores</option>
-              {stores.map((store) => (
+              {availableStores.map((store) => (
                 <option key={store.id} value={store.id}>
                   {store.name} ({store.platform})
                 </option>

@@ -15,6 +15,14 @@ type StoreSaveState = {
   message?: string;
 };
 
+type StoresApiResponse = {
+  success: boolean;
+  data?: {
+    stores: StoreRow[];
+  };
+  error?: string;
+};
+
 type PlatformFilter = "all" | Platform;
 type ActivityFilter = "all" | "active" | "inactive" | "attention";
 type ConnectionTone = "emerald" | "amber" | "red";
@@ -142,6 +150,40 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
   useEffect(() => {
     setStores(initialStores);
   }, [initialStores]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function refreshStores() {
+      try {
+        const response = await fetch("/api/admin/stores", {
+          cache: "no-store"
+        });
+        const json = (await response.json()) as StoresApiResponse;
+
+        if (!response.ok || !json.success || !json.data || !isActive) {
+          return;
+        }
+
+        setStores(json.data.stores);
+      } catch (error) {
+        console.error("Unable to refresh admin stores", error);
+      }
+    }
+
+    void refreshStores();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refreshStores();
+      }
+    }, 15000);
+
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const initialStoreMap = useMemo(
     () =>
