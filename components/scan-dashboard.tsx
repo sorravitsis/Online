@@ -348,6 +348,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             <select
               className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink focus:outline-none focus:ring-2 focus:ring-brand-red/30"
               value={selectedStoreId}
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
                 setSelectedStoreId(e.target.value);
                 refocusScannerInput();
