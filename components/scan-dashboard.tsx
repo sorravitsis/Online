@@ -374,7 +374,6 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             autoCapitalize="off"
             autoCorrect="off"
             className="pointer-events-none absolute left-[-9999px] top-auto h-px w-px opacity-0"
-            onBlur={refocusScannerInput}
             onChange={(event) => setBarcode(event.target.value)}
             value={barcode}
           />
