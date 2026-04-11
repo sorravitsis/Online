@@ -15,6 +15,12 @@ export default async function WarehousePage({
 }: WarehousePageProps) {
   const filters = normalizeOrderFilters({
     status: typeof searchParams?.status === "string" ? searchParams.status : undefined,
+    platform:
+      typeof searchParams?.platform === "string"
+        ? searchParams.platform === "shopee" || searchParams.platform === "lazada"
+          ? searchParams.platform
+          : undefined
+        : undefined,
     storeId:
       typeof searchParams?.store_id === "string"
         ? searchParams.store_id

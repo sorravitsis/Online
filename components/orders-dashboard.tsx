@@ -11,7 +11,7 @@ import {
   type OrderFilters
 } from "@/lib/order-filters";
 import { formatOrderStatus } from "@/lib/format";
-import type { OrderWithStore, StoreRow } from "@/lib/types";
+import type { OrderWithStore, Platform, StoreRow } from "@/lib/types";
 
 type OrdersDashboardProps = {
   initialOrders: OrderWithStore[];
@@ -34,6 +34,7 @@ type OrdersApiResponse = {
 };
 
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000];
+const SEARCH_DEBOUNCE_MS = 350;
 
 function badgeClasses(status: string) {
   switch (status) {
@@ -72,8 +73,23 @@ export function OrdersDashboard({
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRequestRef = useRef(0);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const restoreSearchFocusRef = useRef(false);
   const maxWorkDate = getDefaultOrderDate();
+
+  const filteredStores = useMemo(() => {
+    if (!draftFilters.platform) {
+      return stores;
+    }
+
+    return stores.filter((store) => store.platform === draftFilters.platform);
+  }, [draftFilters.platform, stores]);
+
+  const storePlatformById = useMemo(() => {
+    return new Map(stores.map((store) => [store.id, store.platform]));
+  }, [stores]);
 
   useEffect(() => {
     setOrders(initialOrders);
@@ -83,6 +99,42 @@ export function OrdersDashboard({
     setDraftFilters(filters);
     setLastSyncedAt(new Date());
   }, [filters, initialOrders, initialPage, initialTotal]);
+
+  useEffect(() => {
+    if (!restoreSearchFocusRef.current) {
+      return;
+    }
+
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+    restoreSearchFocusRef.current = false;
+  }, [filters]);
+
+  useEffect(() => {
+    const currentQuery = draftFilters.query ?? "";
+    const appliedQuery = filters.query ?? "";
+
+    if (currentQuery === appliedQuery) {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      restoreSearchFocusRef.current = true;
+      navigate({
+        ...draftFilters,
+        page: 1
+      });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [draftFilters, filters.query]);
 
   useEffect(() => {
     const supabase = tryCreateBrowserClient();
@@ -232,6 +284,14 @@ export function OrdersDashboard({
 
   function handleFilterSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (document.activeElement === searchInputRef.current) {
+      restoreSearchFocusRef.current = true;
+    }
+
     navigate({
       ...draftFilters,
       page: 1
@@ -257,6 +317,21 @@ export function OrdersDashboard({
     navigate({
       ...filters,
       page: Math.min(Math.max(nextPage, 1), totalPages)
+    });
+  }
+
+  function handlePlatformChange(platform: Platform | undefined) {
+    setDraftFilters((current) => {
+      const nextStoreId =
+        current.storeId && storePlatformById.get(current.storeId) !== platform
+          ? undefined
+          : current.storeId;
+
+      return {
+        ...current,
+        platform,
+        storeId: platform ? nextStoreId : current.storeId
+      };
     });
   }
 
@@ -293,8 +368,9 @@ export function OrdersDashboard({
               AWB order queue
             </h1>
             <p className="text-sm text-slate-500">
-              Filter by store, status, or work date, then let live sync keep the
-              queue current while n8n writes new orders in the background.
+              Search fast by order reference, narrow by platform or store, then
+              let live sync keep the queue current while n8n writes new orders in
+              the background.
             </p>
           </div>
 
@@ -321,14 +397,16 @@ export function OrdersDashboard({
         </header>
 
         <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
-          <form className="grid gap-4 xl:grid-cols-[1.3fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
+          <form className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_1fr_1fr_0.9fr_auto]" onSubmit={handleFilterSubmit}>
             <label className="space-y-2 text-sm font-medium text-slate-700 xl:col-span-2">
               Search order
               <input
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                ref={searchInputRef}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
+                    page: 1,
                     query: event.target.value || undefined
                   }))
                 }
@@ -336,6 +414,25 @@ export function OrdersDashboard({
                 type="search"
                 value={draftFilters.query ?? ""}
               />
+            </label>
+
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Platform
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  handlePlatformChange(
+                    event.target.value === "shopee" || event.target.value === "lazada"
+                      ? event.target.value
+                      : undefined
+                  )
+                }
+                value={draftFilters.platform ?? ""}
+              >
+                <option value="">All platforms</option>
+                <option value="shopee">Shopee</option>
+                <option value="lazada">Lazada</option>
+              </select>
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -371,7 +468,7 @@ export function OrdersDashboard({
                 value={draftFilters.storeId ?? ""}
               >
                 <option value="">All stores</option>
-                {stores.map((store) => (
+                {filteredStores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.name}
                   </option>
@@ -427,9 +524,7 @@ export function OrdersDashboard({
               <button
                 className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
                 onClick={() =>
-                  setDraftFilters(
-                    normalizeOrderFilters()
-                  )
+                  setDraftFilters(normalizeOrderFilters())
                 }
                 type="button"
               >
@@ -455,6 +550,7 @@ export function OrdersDashboard({
                     ? "Live queue ready"
                     : "Auto-refresh every 15s"}
               </span>
+              <span>{draftFilters.query ? "Debounced search active" : "Search ready"}</span>
               <span>Last sync {lastSyncedAt.toLocaleTimeString()}</span>
             </div>
           </div>

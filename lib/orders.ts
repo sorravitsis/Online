@@ -1,6 +1,7 @@
 import { ORDER_RETENTION_DAYS } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase";
 import type { OrderFilters } from "@/lib/order-filters";
+import type { Platform } from "@/lib/types";
 import type { OrderWithStore } from "@/lib/types";
 
 const PAGE_SIZE = 50;
@@ -9,6 +10,23 @@ const BANGKOK_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
 type ListOrdersFilters = Partial<OrderFilters> & {
   barcode?: string;
 };
+
+async function resolveStoreIdsForPlatform(platform: Platform, storeId?: string) {
+  const supabase = createAdminClient();
+  let query = supabase.from("stores").select("id").eq("platform", platform);
+
+  if (storeId) {
+    query = query.eq("id", storeId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Unable to resolve stores for platform: ${error.message}`);
+  }
+
+  return (data ?? []).map((store) => store.id);
+}
 
 function sanitizeOrderSearchTerm(value: string) {
   return value.replace(/[,%()"'\\]/g, " ").trim();
@@ -62,6 +80,21 @@ export async function listOrders(filters: ListOrdersFilters) {
 
   if (filters.storeId) {
     query = query.eq("store_id", filters.storeId);
+  }
+
+  if (filters.platform) {
+    const storeIds = await resolveStoreIdsForPlatform(filters.platform, filters.storeId);
+
+    if (storeIds.length === 0) {
+      return {
+        orders: [],
+        total: 0,
+        page,
+        pageSize
+      };
+    }
+
+    query = query.in("store_id", storeIds);
   }
 
   if (filters.barcode) {

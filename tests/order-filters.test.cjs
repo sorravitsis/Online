@@ -30,6 +30,7 @@ async function run() {
   {
     const filters = normalizeOrderFilters({
       status: "printed",
+      platform: "lazada",
       storeId: "store-1",
       query: "1096612397764146",
       date: "2026-03-30",
@@ -39,6 +40,7 @@ async function run() {
     const params = buildOrderSearchParams(filters);
 
     assert.equal(params.get("status"), "printed");
+    assert.equal(params.get("platform"), "lazada");
     assert.equal(params.get("store_id"), "store-1");
     assert.equal(params.get("q"), "1096612397764146");
     assert.equal(params.get("date"), "2026-03-30");

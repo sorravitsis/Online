@@ -1,5 +1,8 @@
+import type { Platform } from "@/lib/types";
+
 export type OrderFilters = {
   status: string;
+  platform?: Platform;
   storeId?: string;
   query?: string;
   date: string;
@@ -9,6 +12,7 @@ export type OrderFilters = {
 
 type OrderFiltersInput = {
   status?: string;
+  platform?: Platform;
   storeId?: string;
   query?: string;
   date?: string;
@@ -38,6 +42,7 @@ export function getDefaultOrderDate(now = new Date()) {
 export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilters {
   return {
     status: input.status?.trim() || DEFAULT_STATUS,
+    platform: input.platform?.trim() as Platform | undefined,
     storeId: input.storeId?.trim() || undefined,
     query: input.query?.trim() || undefined,
     date: input.date?.trim() || getDefaultOrderDate(),
@@ -52,6 +57,10 @@ export function buildOrderSearchParams(filters: OrderFilters) {
   params.set("date", filters.date);
   params.set("page", String(filters.page));
   params.set("limit", String(filters.limit));
+
+  if (filters.platform) {
+    params.set("platform", filters.platform);
+  }
 
   if (filters.storeId) {
     params.set("store_id", filters.storeId);

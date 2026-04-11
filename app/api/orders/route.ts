@@ -12,9 +12,13 @@ export async function GET(request: Request) {
     const rawLimit = Number.parseInt(searchParams.get("limit") ?? "100", 10);
     const page = Number.isFinite(rawPage) && rawPage >= 1 ? Math.min(rawPage, 1000) : 1;
     const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, MAX_PAGE_SIZE) : 100;
+    const rawPlatform = searchParams.get("platform");
+    const platform =
+      rawPlatform === "shopee" || rawPlatform === "lazada" ? rawPlatform : undefined;
 
     const filters = normalizeOrderFilters({
       status: searchParams.get("status") ?? (barcode ? "all" : undefined),
+      platform,
       storeId: searchParams.get("store_id") ?? undefined,
       query: searchParams.get("q") ?? undefined,
       date: searchParams.get("date") ?? undefined,
