@@ -247,6 +247,7 @@ export function OrdersDashboard({
     }
 
     void refreshStores();
+    void refreshOrders();
 
     const pollInterval = setInterval(() => {
       if (document.visibilityState === "visible") {
