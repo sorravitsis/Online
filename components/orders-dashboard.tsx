@@ -435,8 +435,8 @@ export function OrdersDashboard({
 
         <section className="glass-card rounded-3xl p-6">
           <form className="grid gap-4 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">Search order</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              Search order
               <input
                 className="input-field"
                 ref={searchInputRef}
@@ -452,8 +452,8 @@ export function OrdersDashboard({
               />
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">Platform</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              Platform
               <select
                 className="input-field"
                 onChange={(event) =>
@@ -471,8 +471,8 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">Status</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              Status
               <select
                 className="input-field"
                 onChange={(event) =>
@@ -491,8 +491,8 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">Store</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              Store
               <select
                 className="input-field"
                 onChange={(event) =>
@@ -512,8 +512,8 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">From</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              From
               <input
                 className="input-field"
                 max={maxWorkDate}
@@ -529,8 +529,8 @@ export function OrdersDashboard({
               />
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-brand-ink-700">
-              <span className="text-center">To</span>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              To
               <input
                 className="input-field"
                 max={maxWorkDate}
