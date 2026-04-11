@@ -47,7 +47,7 @@
               "id": "ed321dac-d1c1-421e-b037-9431c0dc7654",
               "name": "partnerKey",
               "type": "string",
-              "value": "REPLACE_WITH_SHOPEE_APP_KEY"
+              "value": "REPLACE_WITH_SHOPEE_PARTNER_KEY"
             },
             {
               "id": "c1b0ab02-81d9-42dd-95a7-54e80375ae32",
