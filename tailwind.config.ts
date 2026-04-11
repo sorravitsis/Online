@@ -1,4 +1,28 @@
 import type { Config } from "tailwindcss";
+import tokens from "./design/tokens.json";
+
+const t = tokens["SiS Warehouse"];
+
+// Extract color scale: { "50": { value: "#..." }, ... } → { "50": "#...", ... }
+function extractScale(scale: Record<string, { value: string }>) {
+  return Object.fromEntries(
+    Object.entries(scale).map(([k, v]) => [k, v.value])
+  );
+}
+
+// Extract shadow scale: { card: { value: "..." }, ... } → { card: "...", ... }
+function extractValues(obj: Record<string, { value: string }>) {
+  return Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [k, v.value])
+  );
+}
+
+const redScale = extractScale(t.colors.red);
+const inkScale = extractScale(t.colors.ink);
+const semantic = extractValues(t.colors.semantic);
+const spacing = extractValues(t.spacing);
+const borderRadius = extractValues(t.borderRadius);
+const shadows = extractValues(t.shadows);
 
 const config: Config = {
   content: [
@@ -10,54 +34,21 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          // Primary red scale — from subtle tint to deep
-          red: {
-            50: "#fef2f2",
-            100: "#fee2e2",
-            200: "#fecaca",
-            300: "#fca5a5",
-            400: "#f87171",
-            500: "#ef4444",
-            600: "#dc2626",
-            700: "#b91c1c",
-            800: "#991b1b",
-            900: "#7f1d1d",
-            950: "#450a0a",
-            DEFAULT: "#dc2626"
-          },
-          // Neutral ink scale
-          ink: {
-            50: "#f8fafc",
-            100: "#f1f5f9",
-            200: "#e2e8f0",
-            300: "#cbd5e1",
-            400: "#94a3b8",
-            500: "#64748b",
-            600: "#475569",
-            700: "#334155",
-            800: "#1e293b",
-            900: "#0f172a",
-            950: "#020617",
-            DEFAULT: "#0f172a"
-          },
-          // Semantic
-          mist: "#f8fafc",
-          steel: "#334155",
-          amber: "#f59e0b",
-          green: "#15803d",
-          blue: "#2563eb"
+          red: { ...redScale, DEFAULT: redScale["600"] },
+          ink: { ...inkScale, DEFAULT: inkScale["900"] },
+          mist: semantic.backdrop,
+          green: semantic.success,
+          amber: semantic.warning,
+          blue: semantic.info,
+          surface: semantic.surface
         }
       },
-      boxShadow: {
-        "card": "0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 14px -2px rgba(15, 23, 42, 0.05)",
-        "card-hover": "0 4px 20px -4px rgba(15, 23, 42, 0.08), 0 8px 28px -6px rgba(15, 23, 42, 0.06)",
-        "elevated": "0 8px 32px -8px rgba(220, 38, 38, 0.12), 0 16px 48px -12px rgba(15, 23, 42, 0.08)",
-        "glow-red": "0 0 24px -4px rgba(220, 38, 38, 0.2)",
-        "inner-glow": "inset 0 1px 2px 0 rgba(255, 255, 255, 0.8)"
-      },
+      spacing,
+      borderRadius,
+      boxShadow: shadows,
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "shimmer": "linear-gradient(110deg, transparent 33%, rgba(255,255,255,0.4) 50%, transparent 67%)"
+        shimmer: "linear-gradient(110deg, transparent 33%, rgba(255,255,255,0.4) 50%, transparent 67%)"
       },
       keyframes: {
         "fade-in": {
