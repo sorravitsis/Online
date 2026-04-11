@@ -41,11 +41,11 @@ type StoresApiResponse = {
   error?: string;
 };
 
-const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000];
+const DISPLAY_PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 350;
 
 function formatStoreLabel(store: StoreRow) {
-  return `${store.name} · ${store.shop_id}`;
+  return store.name;
 }
 
 function badgeClasses(status: string) {
@@ -76,9 +76,8 @@ export function OrdersDashboard({
   const [orders, setOrders] = useState(initialOrders);
   const [availableStores, setAvailableStores] = useState(stores);
   const [total, setTotal] = useState(initialTotal);
-  const [page, setPage] = useState(initialPage);
+  const [displayPage, setDisplayPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState(filters);
-  const [pageInput, setPageInput] = useState(String(initialPage));
   const [isPending, startTransition] = useTransition();
   const [isSyncing, setIsSyncing] = useState(false);
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
@@ -109,11 +108,10 @@ export function OrdersDashboard({
     setAvailableStores(stores);
     setOrders(initialOrders);
     setTotal(initialTotal);
-    setPage(initialPage);
-    setPageInput(String(initialPage));
+    setDisplayPage(1);
     setDraftFilters(filters);
     setLastSyncedAt(new Date());
-  }, [filters, initialOrders, initialPage, initialTotal]);
+  }, [filters, initialOrders, initialTotal, stores]);
 
   useEffect(() => {
     if (!restoreSearchFocusRef.current) {
@@ -341,13 +339,18 @@ export function OrdersDashboard({
     };
   }, [filters, router]);
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(total / pageSize)),
-    [pageSize, total]
+  const totalDisplayPages = useMemo(
+    () => Math.max(1, Math.ceil(orders.length / DISPLAY_PAGE_SIZE)),
+    [orders.length]
+  );
+
+  const displayedOrders = useMemo(
+    () => orders.slice((displayPage - 1) * DISPLAY_PAGE_SIZE, displayPage * DISPLAY_PAGE_SIZE),
+    [orders, displayPage]
   );
 
   function navigate(nextFilters: OrderFilters) {
-    const normalized = normalizeOrderFilters(nextFilters);
+    const normalized = normalizeOrderFilters({ ...nextFilters, limit: 1000, page: 1 });
     const search = buildOrderSearchParams(normalized).toString();
 
     startTransition(() => {
@@ -365,32 +368,11 @@ export function OrdersDashboard({
       restoreSearchFocusRef.current = true;
     }
 
-    navigate({
-      ...draftFilters,
-      page: 1
-    });
+    navigate(draftFilters);
   }
 
-  function handlePageChange(nextPage: number) {
-    navigate({
-      ...filters,
-      page: nextPage
-    });
-  }
-
-  function handlePageJump(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextPage = Number.parseInt(pageInput, 10);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageInput(String(page));
-      return;
-    }
-
-    navigate({
-      ...filters,
-      page: Math.min(Math.max(nextPage, 1), totalPages)
-    });
+  function handleDisplayPageChange(next: number) {
+    setDisplayPage(Math.max(1, Math.min(next, totalDisplayPages)));
   }
 
   function handlePlatformChange(platform: Platform | undefined) {
@@ -453,8 +435,8 @@ export function OrdersDashboard({
         </header>
 
         <section className="glass-card rounded-3xl p-6">
-          <form className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_1fr_1fr_1.8fr_auto]" onSubmit={handleFilterSubmit}>
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700 xl:col-span-2">
+          <form className="grid gap-4 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Search order
               <input
                 className="input-field"
@@ -462,7 +444,6 @@ export function OrdersDashboard({
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
-                    page: 1,
                     query: event.target.value || undefined
                   }))
                 }
@@ -532,66 +513,41 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <div className="space-y-2">
-              <span className="block text-sm font-medium text-brand-ink-700">Date range</span>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <span className="section-label">From</span>
-                  <input
-                    className="input-field !py-2 !text-xs"
-                    max={maxWorkDate}
-                    onChange={(event) =>
-                      setDraftFilters((current) => ({
-                        ...current,
-                        dateFrom: event.target.value,
-                        dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
-                      }))
-                    }
-                    type="date"
-                    value={draftFilters.dateFrom}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="section-label">To</span>
-                  <input
-                    className="input-field !py-2 !text-xs"
-                    max={maxWorkDate}
-                    min={draftFilters.dateFrom}
-                    onChange={(event) =>
-                      setDraftFilters((current) => ({
-                        ...current,
-                        dateTo: event.target.value
-                      }))
-                    }
-                    type="date"
-                    value={draftFilters.dateTo}
-                  />
-                </div>
-              </div>
-            </div>
-
             <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Rows per page
-              <select
+              From
+              <input
                 className="input-field"
+                max={maxWorkDate}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
-                    limit: Number.parseInt(event.target.value, 10),
-                    page: 1
+                    dateFrom: event.target.value,
+                    dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
                   }))
                 }
-                value={String(draftFilters.limit)}
-              >
-                {PAGE_SIZE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option} rows
-                  </option>
-                ))}
-              </select>
+                type="date"
+                value={draftFilters.dateFrom}
+              />
             </label>
 
-            <div className="flex items-end gap-3">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
+              To
+              <input
+                className="input-field"
+                max={maxWorkDate}
+                min={draftFilters.dateFrom}
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    dateTo: event.target.value
+                  }))
+                }
+                type="date"
+                value={draftFilters.dateTo}
+              />
+            </label>
+
+            <div className="flex items-end justify-end gap-3">
               <button
                 className="btn-primary"
                 disabled={isPending}
@@ -617,7 +573,10 @@ export function OrdersDashboard({
             <div>
               <h2 className="text-lg font-semibold text-brand-ink-900">Orders</h2>
               <p className="text-sm text-brand-ink-500">
-                Showing page {page} of {totalPages} with {total} matching orders
+                {orders.length > 0
+                  ? `Showing ${(displayPage - 1) * DISPLAY_PAGE_SIZE + 1}–${Math.min(displayPage * DISPLAY_PAGE_SIZE, orders.length)} of ${orders.length} orders`
+                  : "No orders found"}
+                {total > orders.length ? ` (${total} total — refine filters to narrow)` : ""}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-brand-ink-400">
@@ -646,14 +605,14 @@ export function OrdersDashboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-ink-100">
-                {orders.length === 0 ? (
+                {displayedOrders.length === 0 ? (
                   <tr>
                     <td className="px-3 py-8 text-center text-brand-ink-400" colSpan={6}>
                       No orders found for the selected filters.
                     </td>
                   </tr>
                 ) : (
-                  orders.map((order) => (
+                  displayedOrders.map((order) => (
                     <tr
                       key={order.id}
                       className={`align-top transition-colors hover:bg-brand-ink-50 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
@@ -690,53 +649,31 @@ export function OrdersDashboard({
             </table>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-brand-ink-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-brand-ink-500">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <form className="flex items-center gap-2" onSubmit={handlePageJump}>
-                <label className="text-sm text-brand-ink-500" htmlFor="orders-page-input">
-                  Go to page
-                </label>
-                <input
-                  className="w-20 rounded-full border border-brand-ink-200 bg-white px-3 py-2 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100"
-                  id="orders-page-input"
-                  inputMode="numeric"
-                  min={1}
-                  onChange={(event) => setPageInput(event.target.value)}
-                  type="number"
-                  value={pageInput}
-                />
-                <button
-                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={isPending}
-                  type="submit"
-                >
-                  Go
-                </button>
-              </form>
-
+          {totalDisplayPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-brand-ink-100 pt-4">
+              <p className="text-sm text-brand-ink-500">
+                Page {displayPage} of {totalDisplayPages}
+              </p>
               <div className="flex gap-3">
                 <button
                   className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={page <= 1 || isPending}
-                  onClick={() => handlePageChange(page - 1)}
+                  disabled={displayPage <= 1}
+                  onClick={() => handleDisplayPageChange(displayPage - 1)}
                   type="button"
                 >
                   Previous
                 </button>
                 <button
                   className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={page >= totalPages || isPending}
-                  onClick={() => handlePageChange(page + 1)}
+                  disabled={displayPage >= totalDisplayPages}
+                  onClick={() => handleDisplayPageChange(displayPage + 1)}
                   type="button"
                 >
                   Next
                 </button>
               </div>
             </div>
-          </div>
+          )}
         </section>
       </div>
     </main>
