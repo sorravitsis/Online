@@ -19,6 +19,8 @@ type QueuedOrder = {
 type SingleResult =
   | { kind: "idle" }
   | { kind: "success"; awbNumber: string; order: OrderWithStore; status: "printed" | "queued" }
+  | { kind: "already_printed"; order: OrderWithStore; awbNumber?: string }
+  | { kind: "locked"; order: OrderWithStore }
   | { kind: "error"; message: string };
 
 type ScanDashboardProps = {
@@ -142,6 +144,18 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         return;
       }
 
+      // block non-printable statuses
+      if (order.awb_status === "printed") {
+        setBarcode("ALREADY PRINTED");
+        setTimeout(() => setBarcode(""), 1500);
+        return;
+      }
+      if (order.awb_status === "printing") {
+        setBarcode("LOCKED");
+        setTimeout(() => setBarcode(""), 1500);
+        return;
+      }
+
       // deduplicate
       if (queue.some((q) => q.order.id === order.id)) {
         setBarcode("ALREADY ADDED");
@@ -245,6 +259,22 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         setSingleResult({ kind: "error", message: mapScanError("order_not_found") });
         return;
       }
+
+      // Show order immediately so staff can see it
+      setActiveOrder(order);
+
+      if (order.awb_status === "printed") {
+        setSingleResult({ kind: "already_printed", order, awbNumber: order.awb_number ?? undefined });
+        setBarcode("");
+        return;
+      }
+
+      if (order.awb_status === "printing") {
+        setSingleResult({ kind: "locked", order });
+        setBarcode("");
+        return;
+      }
+
       await submitSinglePrint(order);
     } catch (error) {
       setSingleResult({ kind: "error", message: error instanceof Error ? error.message : "Unexpected scan error." });
@@ -434,12 +464,41 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         {/* ── Single mode panels ──────────────────────────────────────────── */}
         {mode === "single" && (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            {/* Order preview */}
             <div className="rounded-2xl border bg-slate-50 p-5">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-steel/60">
                 Order preview
               </p>
               {activeOrder ? (
                 <div className="mt-4 space-y-3 text-sm text-slate-600">
+                  {/* Prominent status badge */}
+                  <div>
+                    {activeOrder.awb_status === "pending" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Ready to print
+                      </span>
+                    )}
+                    {activeOrder.awb_status === "printed" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        Already printed
+                      </span>
+                    )}
+                    {activeOrder.awb_status === "printing" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                        Printing / Locked
+                      </span>
+                    )}
+                    {activeOrder.awb_status === "failed" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-brand-red">
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
+                        Print failed — retry available
+                      </span>
+                    )}
+                  </div>
+
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Order</p>
                     <p className="mt-1 text-base font-semibold text-brand-ink">
@@ -492,10 +551,6 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                       );
                     })()}
                   </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Status</p>
-                    <p className="mt-1 capitalize">{activeOrder.awb_status}</p>
-                  </div>
                 </div>
               ) : (
                 <p className="mt-4 text-sm text-slate-500">
@@ -504,18 +559,21 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               )}
             </div>
 
+            {/* Print status */}
             <div className="rounded-2xl border bg-slate-50 p-5">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-steel/60">
                 Print status
               </p>
+
               {singleResult.kind === "idle" && (
                 <p className="mt-4 text-sm text-slate-500">
                   Ready for the next scan. Press Enter on the scanner to submit.
                 </p>
               )}
+
               {singleResult.kind === "success" && (
                 <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <p className="text-sm font-medium text-brand-green">
+                  <p className="text-sm font-semibold text-emerald-700">
                     {mapScanSuccess(singleResult.status, singleResult.awbNumber)}
                   </p>
                   <p className="mt-2 text-sm text-emerald-800">
@@ -525,9 +583,41 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                   </p>
                 </div>
               )}
+
+              {singleResult.kind === "already_printed" && (
+                <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                  <p className="text-sm font-semibold text-blue-700">AWB already printed</p>
+                  <p className="mt-1 text-sm text-blue-700">
+                    {singleResult.order.platform_order_id} was printed earlier.
+                  </p>
+                  {singleResult.awbNumber && (
+                    <p className="mt-2 font-mono text-xs font-medium text-blue-600">
+                      AWB: {singleResult.awbNumber}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="mt-3 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+                    disabled={isSubmitting}
+                    onClick={() => void submitSinglePrint(singleResult.order)}
+                  >
+                    Force reprint
+                  </button>
+                </div>
+              )}
+
+              {singleResult.kind === "locked" && (
+                <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-700">Order is locked</p>
+                  <p className="mt-1 text-sm text-amber-700">
+                    {singleResult.order.platform_order_id} is currently being printed by another session. Wait a moment and scan again.
+                  </p>
+                </div>
+              )}
+
               {singleResult.kind === "error" && (
                 <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
-                  <p className="text-sm font-medium text-brand-red">{singleResult.message}</p>
+                  <p className="text-sm font-semibold text-brand-red">{singleResult.message}</p>
                 </div>
               )}
             </div>
