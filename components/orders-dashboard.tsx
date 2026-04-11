@@ -33,6 +33,14 @@ type OrdersApiResponse = {
   error?: string;
 };
 
+type StoresApiResponse = {
+  success: boolean;
+  data?: {
+    stores: StoreRow[];
+  };
+  error?: string;
+};
+
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000];
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -62,6 +70,7 @@ export function OrdersDashboard({
   const router = useRouter();
   const pathname = usePathname();
   const [orders, setOrders] = useState(initialOrders);
+  const [availableStores, setAvailableStores] = useState(stores);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
   const [draftFilters, setDraftFilters] = useState(filters);
@@ -82,17 +91,18 @@ export function OrdersDashboard({
 
   const filteredStores = useMemo(() => {
     if (!draftFilters.platform) {
-      return stores;
+      return availableStores;
     }
 
-    return stores.filter((store) => store.platform === draftFilters.platform);
-  }, [draftFilters.platform, stores]);
+    return availableStores.filter((store) => store.platform === draftFilters.platform);
+  }, [availableStores, draftFilters.platform]);
 
   const storePlatformById = useMemo(() => {
-    return new Map(stores.map((store) => [store.id, store.platform]));
-  }, [stores]);
+    return new Map(availableStores.map((store) => [store.id, store.platform]));
+  }, [availableStores]);
 
   useEffect(() => {
+    setAvailableStores(stores);
     setOrders(initialOrders);
     setTotal(initialTotal);
     setPage(initialPage);
@@ -197,6 +207,23 @@ export function OrdersDashboard({
       }
     }
 
+    async function refreshStores() {
+      try {
+        const response = await fetch("/api/admin/stores", {
+          cache: "no-store"
+        });
+        const json = (await response.json()) as StoresApiResponse;
+
+        if (!response.ok || !json.success || !json.data || !isActive) {
+          return;
+        }
+
+        setAvailableStores(json.data.stores);
+      } catch (error) {
+        console.error("Unable to refresh stores for orders dashboard", error);
+      }
+    }
+
     function scheduleRefresh(changedId?: string | null) {
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -213,14 +240,18 @@ export function OrdersDashboard({
       }
 
       storeRefreshTimeoutRef.current = setTimeout(() => {
+        void refreshStores();
         setLastSyncedAt(new Date());
         router.refresh();
       }, 250);
     }
 
+    void refreshStores();
+
     const pollInterval = setInterval(() => {
       if (document.visibilityState === "visible") {
         scheduleRefresh();
+        void refreshStores();
       }
     }, 15000);
 
