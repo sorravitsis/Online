@@ -73,6 +73,7 @@ export function OrdersDashboard({
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const storeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRequestRef = useRef(0);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -206,6 +207,17 @@ export function OrdersDashboard({
       }, 400);
     }
 
+    function scheduleStoreRefresh() {
+      if (storeRefreshTimeoutRef.current) {
+        clearTimeout(storeRefreshTimeoutRef.current);
+      }
+
+      storeRefreshTimeoutRef.current = setTimeout(() => {
+        setLastSyncedAt(new Date());
+        router.refresh();
+      }, 250);
+    }
+
     const pollInterval = setInterval(() => {
       if (document.visibilityState === "visible") {
         scheduleRefresh();
@@ -236,6 +248,28 @@ export function OrdersDashboard({
             scheduleRefresh(record?.id ?? null);
           }
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "stores"
+          },
+          () => {
+            scheduleStoreRefresh();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "stores"
+          },
+          () => {
+            scheduleStoreRefresh();
+          }
+        )
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             setRealtimeEnabled(false);
@@ -263,10 +297,14 @@ export function OrdersDashboard({
         clearTimeout(refreshTimeoutRef.current);
       }
 
+      if (storeRefreshTimeoutRef.current) {
+        clearTimeout(storeRefreshTimeoutRef.current);
+      }
+
       clearInterval(pollInterval);
       unsubscribe();
     };
-  }, [filters]);
+  }, [filters, router]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / pageSize)),
