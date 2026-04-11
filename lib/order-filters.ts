@@ -5,7 +5,8 @@ export type OrderFilters = {
   platform?: Platform;
   storeId?: string;
   query?: string;
-  date: string;
+  dateFrom: string;
+  dateTo: string;
   page: number;
   limit: number;
 };
@@ -15,7 +16,8 @@ type OrderFiltersInput = {
   platform?: Platform;
   storeId?: string;
   query?: string;
-  date?: string;
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 };
@@ -40,12 +42,17 @@ export function getDefaultOrderDate(now = new Date()) {
 }
 
 export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilters {
+  const today = getDefaultOrderDate();
+  const dateFrom = input.dateFrom?.trim() || today;
+  const dateTo = input.dateTo?.trim() || dateFrom;
+
   return {
     status: input.status?.trim() || DEFAULT_STATUS,
     platform: input.platform?.trim() as Platform | undefined,
     storeId: input.storeId?.trim() || undefined,
     query: input.query?.trim() || undefined,
-    date: input.date?.trim() || getDefaultOrderDate(),
+    dateFrom,
+    dateTo,
     page: toPositiveInteger(input.page, DEFAULT_PAGE),
     limit: toPositiveInteger(input.limit, DEFAULT_LIMIT)
   };
@@ -54,7 +61,8 @@ export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilte
 export function buildOrderSearchParams(filters: OrderFilters) {
   const params = new URLSearchParams();
   params.set("status", filters.status);
-  params.set("date", filters.date);
+  params.set("date_from", filters.dateFrom);
+  params.set("date_to", filters.dateTo);
   params.set("page", String(filters.page));
   params.set("limit", String(filters.limit));
 

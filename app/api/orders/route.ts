@@ -21,7 +21,8 @@ export async function GET(request: Request) {
       platform,
       storeId: searchParams.get("store_id") ?? undefined,
       query: searchParams.get("q") ?? undefined,
-      date: searchParams.get("date") ?? undefined,
+      dateFrom: searchParams.get("date_from") ?? searchParams.get("date") ?? undefined,
+      dateTo: searchParams.get("date_to") ?? undefined,
       page,
       limit
     });

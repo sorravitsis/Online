@@ -26,7 +26,8 @@ export default async function WarehousePage({
         ? searchParams.store_id
         : undefined,
     query: typeof searchParams?.q === "string" ? searchParams.q : undefined,
-    date: typeof searchParams?.date === "string" ? searchParams.date : undefined,
+    dateFrom: typeof searchParams?.date_from === "string" ? searchParams.date_from : undefined,
+    dateTo: typeof searchParams?.date_to === "string" ? searchParams.date_to : undefined,
     page:
       typeof searchParams?.page === "string"
         ? Number.parseInt(searchParams.page, 10)

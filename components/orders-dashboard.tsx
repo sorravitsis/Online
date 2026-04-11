@@ -528,21 +528,39 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Work date
-              <input
-                className="input-field"
-                max={maxWorkDate}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    date: event.target.value
-                  }))
-                }
-                type="date"
-                value={draftFilters.date}
-              />
-            </label>
+            <div className="space-y-2">
+              <span className="block text-sm font-medium text-brand-ink-700">Date range</span>
+              <div className="flex flex-col gap-1.5">
+                <input
+                  className="input-field !py-2 !text-xs"
+                  max={maxWorkDate}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      dateFrom: event.target.value,
+                      dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
+                    }))
+                  }
+                  title="From date"
+                  type="date"
+                  value={draftFilters.dateFrom}
+                />
+                <input
+                  className="input-field !py-2 !text-xs"
+                  max={maxWorkDate}
+                  min={draftFilters.dateFrom}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      dateTo: event.target.value
+                    }))
+                  }
+                  title="To date"
+                  type="date"
+                  value={draftFilters.dateTo}
+                />
+              </div>
+            </div>
 
             <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Rows per page

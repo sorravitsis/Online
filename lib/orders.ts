@@ -32,7 +32,7 @@ function sanitizeOrderSearchTerm(value: string) {
   return value.replace(/[,%()"'\\]/g, " ").trim();
 }
 
-export function getBangkokDateRange(date: string) {
+function parseDateParts(date: string) {
   const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
 
   if (
@@ -47,8 +47,15 @@ export function getBangkokDateRange(date: string) {
     throw new Error(`Invalid date filter: ${date}`);
   }
 
-  const startUtcMs = Date.UTC(year, month - 1, day) - BANGKOK_UTC_OFFSET_MS;
-  const endUtcMs = Date.UTC(year, month - 1, day + 1) - BANGKOK_UTC_OFFSET_MS - 1;
+  return { year, month, day };
+}
+
+export function getBangkokDateRange(dateFrom: string, dateTo = dateFrom) {
+  const from = parseDateParts(dateFrom);
+  const to = parseDateParts(dateTo);
+
+  const startUtcMs = Date.UTC(from.year, from.month - 1, from.day) - BANGKOK_UTC_OFFSET_MS;
+  const endUtcMs = Date.UTC(to.year, to.month - 1, to.day + 1) - BANGKOK_UTC_OFFSET_MS - 1;
 
   return {
     start: new Date(startUtcMs).toISOString(),
@@ -119,8 +126,8 @@ export async function listOrders(filters: ListOrdersFilters) {
   }
 
   // Skip date filter when doing a barcode/order-id lookup — the order may be from any day
-  if (filters.date && !filters.barcode) {
-    const { start, end } = getBangkokDateRange(filters.date);
+  if (filters.dateFrom && !filters.barcode) {
+    const { start, end } = getBangkokDateRange(filters.dateFrom, filters.dateTo);
     query = query.gte("created_at", start).lte("created_at", end);
   }
 
