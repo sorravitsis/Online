@@ -28,6 +28,7 @@ export type OrderRow = {
   buyer_name: string | null;
   items_json: JsonValue;
   awb_status: OrderStatus;
+  platform_status: string;
   awb_number: string | null;
   printed_at: string | null;
   created_at: string;

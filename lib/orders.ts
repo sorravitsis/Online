@@ -6,6 +6,20 @@ import type { OrderWithStore } from "@/lib/types";
 
 const PAGE_SIZE = 50;
 const BANGKOK_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
+const TERMINAL_PLATFORM_STATUSES = [
+  "shipped",
+  "in_transit",
+  "to_confirm_receive",
+  "delivered",
+  "completed",
+  "cancelled",
+  "canceled",
+  "returned",
+  "return_to_sender",
+  "failed_delivery",
+  "lost"
+] as const;
+const TERMINAL_ORDER_RETENTION_HOURS = 24;
 
 type ListOrdersFilters = Partial<OrderFilters> & {
   barcode?: string;
@@ -69,6 +83,41 @@ export function getOrderRetentionCutoff(now = new Date()) {
   ).toISOString();
 }
 
+export function getTerminalOrderRetentionCutoff(now = new Date()) {
+  return new Date(
+    now.getTime() - TERMINAL_ORDER_RETENTION_HOURS * 60 * 60 * 1000
+  ).toISOString();
+}
+
+export function normalizePlatformStatus(value: string | null | undefined) {
+  if (!value) {
+    return "unknown";
+  }
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return normalized || "unknown";
+}
+
+export function isTerminalPlatformStatus(value: string | null | undefined) {
+  const normalized = normalizePlatformStatus(value);
+
+  if (!normalized) {
+    return false;
+  }
+
+  return (TERMINAL_PLATFORM_STATUSES as readonly string[]).includes(normalized);
+}
+
+function applyWarehouseVisibilityFilter(query: any) {
+  const hiddenStatuses = TERMINAL_PLATFORM_STATUSES.join(",");
+  return query.not("platform_status", "in", `(${hiddenStatuses})`);
+}
+
 export async function listOrders(filters: ListOrdersFilters) {
   const supabase = createAdminClient();
   const page = Math.max(1, filters.page ?? 1);
@@ -80,6 +129,8 @@ export async function listOrders(filters: ListOrdersFilters) {
     .from("orders")
     .select("*, store:stores(*)", { count: "exact" })
     .order("created_at", { ascending: false });
+
+  query = applyWarehouseVisibilityFilter(query);
 
   if (filters.status && filters.status !== "all") {
     query = query.eq("awb_status", filters.status);

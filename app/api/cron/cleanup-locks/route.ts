@@ -1,7 +1,11 @@
 import { failure, success } from "@/lib/api";
 import { isAuthorizedCronRequest } from "@/lib/cron";
 import { env } from "@/lib/env";
-import { getOrderRetentionCutoff } from "@/lib/orders";
+import {
+  getOrderRetentionCutoff,
+  getTerminalOrderRetentionCutoff,
+  isTerminalPlatformStatus
+} from "@/lib/orders";
 import { createAdminClient } from "@/lib/supabase";
 
 function chunkValues(values: string[], size: number) {
@@ -37,16 +41,30 @@ export async function GET(request: Request) {
     }
 
     const retentionCutoff = getOrderRetentionCutoff();
+    const terminalRetentionCutoff = getTerminalOrderRetentionCutoff();
     const { data: staleOrders, error: staleOrdersError } = await supabase
       .from("orders")
-      .select("id")
-      .lt("created_at", retentionCutoff);
+      .select("id, platform_status, created_at")
+      .lt("created_at", terminalRetentionCutoff);
 
     if (staleOrdersError) {
       return failure(staleOrdersError.message, 500);
     }
 
-    const staleOrderIds = (staleOrders ?? []).map((row) => row.id).filter(Boolean);
+    const staleOrderIds = (staleOrders ?? [])
+      .filter((row) => {
+        if (!row?.id || !row?.created_at) {
+          return false;
+        }
+
+        if (isTerminalPlatformStatus(row.platform_status)) {
+          return row.created_at < terminalRetentionCutoff;
+        }
+
+        return row.created_at < retentionCutoff;
+      })
+      .map((row) => row.id)
+      .filter(Boolean);
     let deletedPrintJobs = 0;
     let deletedPrintLogs = 0;
     let deletedOrderLocks = (expiredLocks ?? []).length;
@@ -107,7 +125,8 @@ export async function GET(request: Request) {
       deletedPrintJobs,
       deletedPrintLogs,
       deletedOrders,
-      retentionCutoff
+      retentionCutoff,
+      terminalRetentionCutoff
     });
   } catch (error) {
     return failure(

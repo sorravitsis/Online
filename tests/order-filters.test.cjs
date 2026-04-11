@@ -12,7 +12,7 @@ async function run() {
 
     assert.equal(filters.status, "pending");
     assert.equal(filters.page, 1);
-    assert.equal(filters.limit, 100);
+    assert.equal(filters.limit, 1000);
     assert.match(filters.dateFrom, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(filters.dateTo, filters.dateFrom);
   }
