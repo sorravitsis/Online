@@ -118,7 +118,8 @@ export async function listOrders(filters: ListOrdersFilters) {
     }
   }
 
-  if (filters.date) {
+  // Skip date filter when doing a barcode/order-id lookup — the order may be from any day
+  if (filters.date && !filters.barcode) {
     const { start, end } = getBangkokDateRange(filters.date);
     query = query.gte("created_at", start).lte("created_at", end);
   }
