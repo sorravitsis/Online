@@ -190,8 +190,6 @@ export function OrdersDashboard({
 
         setOrders(json.data.orders);
         setTotal(json.data.total);
-        setPage(json.data.page);
-        setPageInput(String(json.data.page));
         setLastSyncedAt(new Date());
 
         const highlightedId =
