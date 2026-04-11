@@ -1,6 +1,7 @@
 export type OrderFilters = {
   status: string;
   storeId?: string;
+  query?: string;
   date: string;
   page: number;
   limit: number;
@@ -9,13 +10,14 @@ export type OrderFilters = {
 type OrderFiltersInput = {
   status?: string;
   storeId?: string;
+  query?: string;
   date?: string;
   page?: number;
   limit?: number;
 };
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 1000;
+const DEFAULT_LIMIT = 100;
 const DEFAULT_STATUS = "pending";
 const DEFAULT_TIME_ZONE = "Asia/Bangkok";
 
@@ -37,6 +39,7 @@ export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilte
   return {
     status: input.status?.trim() || DEFAULT_STATUS,
     storeId: input.storeId?.trim() || undefined,
+    query: input.query?.trim() || undefined,
     date: input.date?.trim() || getDefaultOrderDate(),
     page: toPositiveInteger(input.page, DEFAULT_PAGE),
     limit: toPositiveInteger(input.limit, DEFAULT_LIMIT)
@@ -52,6 +55,10 @@ export function buildOrderSearchParams(filters: OrderFilters) {
 
   if (filters.storeId) {
     params.set("store_id", filters.storeId);
+  }
+
+  if (filters.query) {
+    params.set("q", filters.query);
   }
 
   return params;

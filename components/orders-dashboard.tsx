@@ -32,6 +32,9 @@ type OrdersApiResponse = {
   };
   error?: string;
 };
+
+const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000];
+
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
@@ -61,6 +64,7 @@ export function OrdersDashboard({
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
   const [draftFilters, setDraftFilters] = useState(filters);
+  const [pageInput, setPageInput] = useState(String(initialPage));
   const [isPending, startTransition] = useTransition();
   const [isSyncing, setIsSyncing] = useState(false);
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
@@ -75,6 +79,7 @@ export function OrdersDashboard({
     setOrders(initialOrders);
     setTotal(initialTotal);
     setPage(initialPage);
+    setPageInput(String(initialPage));
     setDraftFilters(filters);
     setLastSyncedAt(new Date());
   }, [filters, initialOrders, initialPage, initialTotal]);
@@ -121,6 +126,7 @@ export function OrdersDashboard({
         setOrders(json.data.orders);
         setTotal(json.data.total);
         setPage(json.data.page);
+        setPageInput(String(json.data.page));
         setLastSyncedAt(new Date());
 
         const highlightedId =
@@ -239,6 +245,21 @@ export function OrdersDashboard({
     });
   }
 
+  function handlePageJump(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextPage = Number.parseInt(pageInput, 10);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageInput(String(page));
+      return;
+    }
+
+    navigate({
+      ...filters,
+      page: Math.min(Math.max(nextPage, 1), totalPages)
+    });
+  }
+
   return (
     <main className="min-h-screen px-6 py-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -300,7 +321,23 @@ export function OrdersDashboard({
         </header>
 
         <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
-          <form className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
+          <form className="grid gap-4 xl:grid-cols-[1.3fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
+            <label className="space-y-2 text-sm font-medium text-slate-700 xl:col-span-2">
+              Search order
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    query: event.target.value || undefined
+                  }))
+                }
+                placeholder="Order ID, barcode, AWB, buyer"
+                type="search"
+                value={draftFilters.query ?? ""}
+              />
+            </label>
+
             <label className="space-y-2 text-sm font-medium text-slate-700">
               Status
               <select
@@ -358,6 +395,27 @@ export function OrdersDashboard({
               />
             </label>
 
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Rows per page
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    limit: Number.parseInt(event.target.value, 10),
+                    page: 1
+                  }))
+                }
+                value={String(draftFilters.limit)}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option} rows
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="flex items-end gap-3">
               <button
                 className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
@@ -370,9 +428,7 @@ export function OrdersDashboard({
                 className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
                 onClick={() =>
                   setDraftFilters(
-                    normalizeOrderFilters({
-                      limit: pageSize
-                    })
+                    normalizeOrderFilters()
                   )
                 }
                 type="button"
@@ -464,7 +520,30 @@ export function OrdersDashboard({
             <p className="text-sm text-slate-500">
               Page {page} of {totalPages}
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <form className="flex items-center gap-2" onSubmit={handlePageJump}>
+                <label className="text-sm text-slate-500" htmlFor="orders-page-input">
+                  Go to page
+                </label>
+                <input
+                  className="w-20 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                  id="orders-page-input"
+                  inputMode="numeric"
+                  min={1}
+                  onChange={(event) => setPageInput(event.target.value)}
+                  type="number"
+                  value={pageInput}
+                />
+                <button
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={isPending}
+                  type="submit"
+                >
+                  Go
+                </button>
+              </form>
+
+              <div className="flex gap-3">
               <button
                 className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={page <= 1 || isPending}
@@ -481,6 +560,7 @@ export function OrdersDashboard({
               >
                 Next
               </button>
+              </div>
             </div>
           </div>
         </section>

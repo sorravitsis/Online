@@ -19,6 +19,7 @@ export default async function WarehousePage({
       typeof searchParams?.store_id === "string"
         ? searchParams.store_id
         : undefined,
+    query: typeof searchParams?.q === "string" ? searchParams.q : undefined,
     date: typeof searchParams?.date === "string" ? searchParams.date : undefined,
     page:
       typeof searchParams?.page === "string"

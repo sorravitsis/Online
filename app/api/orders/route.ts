@@ -9,13 +9,14 @@ export async function GET(request: Request) {
 
   try {
     const rawPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
-    const rawLimit = Number.parseInt(searchParams.get("limit") ?? "1000", 10);
+    const rawLimit = Number.parseInt(searchParams.get("limit") ?? "100", 10);
     const page = Number.isFinite(rawPage) && rawPage >= 1 ? Math.min(rawPage, 1000) : 1;
-    const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, MAX_PAGE_SIZE) : 1000;
+    const limit = Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, MAX_PAGE_SIZE) : 100;
 
     const filters = normalizeOrderFilters({
       status: searchParams.get("status") ?? (barcode ? "all" : undefined),
       storeId: searchParams.get("store_id") ?? undefined,
+      query: searchParams.get("q") ?? undefined,
       date: searchParams.get("date") ?? undefined,
       page,
       limit

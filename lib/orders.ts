@@ -10,6 +10,10 @@ type ListOrdersFilters = Partial<OrderFilters> & {
   barcode?: string;
 };
 
+function sanitizeOrderSearchTerm(value: string) {
+  return value.replace(/[,%()"'\\]/g, " ").trim();
+}
+
 export function getBangkokDateRange(date: string) {
   const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
 
@@ -65,6 +69,20 @@ export async function listOrders(filters: ListOrdersFilters) {
     query = query.or(
       `barcode_value.eq.${sanitized},platform_order_id.eq.${sanitized}`
     );
+  }
+
+  if (filters.query) {
+    const sanitized = sanitizeOrderSearchTerm(filters.query);
+    if (sanitized) {
+      query = query.or(
+        [
+          `platform_order_id.ilike.%${sanitized}%`,
+          `barcode_value.ilike.%${sanitized}%`,
+          `buyer_name.ilike.%${sanitized}%`,
+          `awb_number.ilike.%${sanitized}%`
+        ].join(",")
+      );
+    }
   }
 
   if (filters.date) {
