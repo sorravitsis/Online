@@ -338,64 +338,53 @@ export function OrdersDashboard({
   return (
     <main className="min-h-screen px-6 py-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 rounded-3xl border border-red-50 bg-white p-6 shadow-xl shadow-red-100/40 md:flex-row md:items-end md:justify-between">
+        <header className="flex flex-col gap-4 glass-card-elevated rounded-3xl p-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2.5">
-                <span className="rounded-lg bg-brand-red px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-sm shadow-red-200">
-                  SiS
-                </span>
-                <span className="text-2xl font-bold tracking-tight text-brand-ink">
-                  Warehouse
-                </span>
+              <div className="wordmark">
+                <span className="wordmark-badge">SiS</span>
+                <span className="wordmark-text">Warehouse</span>
               </div>
               <span
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                className={`badge ${
                   realtimeEnabled
                     ? "bg-emerald-50 text-emerald-700"
                     : "bg-amber-50 text-amber-700"
                 }`}
               >
                 <span
-                  className={`h-2 w-2 rounded-full ${
+                  className={`h-1.5 w-1.5 rounded-full ${
                     realtimeEnabled ? "bg-emerald-500" : "bg-amber-500"
                   }`}
                 />
-                {realtimeEnabled ? "Realtime connected" : "Polling fallback"}
+                {realtimeEnabled ? "Realtime" : "Polling"}
               </span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-brand-ink">
+            <h1 className="text-3xl font-bold tracking-tight text-brand-ink-900">
               AWB order queue
             </h1>
-            <p className="text-sm text-slate-500">
-              Search fast by order reference, narrow by platform or store, then
-              let live sync keep the queue current while n8n writes new orders in
-              the background.
+            <p className="text-sm text-brand-ink-500">
+              Search by order reference, narrow by platform or store, then
+              let live sync keep the queue current.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link
-              href="/scan"
-              className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700"
-            >
+            <Link href="/scan" className="btn-primary">
               Scan Mode
             </Link>
-            <Link
-              href="/admin"
-              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
-            >
+            <Link href="/admin" className="btn-secondary">
               Admin
             </Link>
           </div>
         </header>
 
-        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
+        <section className="glass-card rounded-3xl p-6">
           <form className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_1fr_1fr_0.9fr_auto]" onSubmit={handleFilterSubmit}>
-            <label className="space-y-2 text-sm font-medium text-slate-700 xl:col-span-2">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700 xl:col-span-2">
               Search order
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 ref={searchInputRef}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
@@ -509,7 +498,7 @@ export function OrdersDashboard({
 
             <div className="flex items-end gap-3">
               <button
-                className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="btn-primary"
                 disabled={isPending}
                 type="submit"
               >

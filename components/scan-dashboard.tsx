@@ -293,35 +293,30 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       className="flex min-h-screen items-start justify-center px-6 py-12"
       onClick={refocusScannerInput}
     >
-      <section className="w-full max-w-3xl rounded-3xl border border-red-50 bg-white p-8 shadow-2xl shadow-red-100/40">
+      <section className="w-full max-w-3xl animate-fade-in glass-card-elevated rounded-3xl p-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <span className="rounded-lg bg-brand-red px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-sm shadow-red-200">
-                SiS
-              </span>
-              <span className="text-2xl font-bold tracking-tight text-brand-ink">Warehouse</span>
+            <div className="wordmark">
+              <span className="wordmark-badge">SiS</span>
+              <span className="wordmark-text">Warehouse</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-brand-ink">Scan to print</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-brand-ink-900">Scan to print</h1>
           </div>
-          <Link
-            href="/"
-            className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
-          >
+          <Link href="/" className="btn-secondary !px-4 !py-2 text-xs">
             Back
           </Link>
         </div>
 
         {/* Mode toggle */}
-        <div className="mt-6 flex gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+        <div className="mt-6 flex gap-1 rounded-2xl border border-brand-ink-100 bg-brand-ink-50 p-1">
           <button
             type="button"
             onClick={() => switchMode("single")}
-            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
               mode === "single"
-                ? "bg-white text-brand-ink shadow-sm"
-                : "text-slate-500 hover:text-brand-ink"
+                ? "bg-white text-brand-ink-900 shadow-card"
+                : "text-brand-ink-400 hover:text-brand-ink-700"
             }`}
           >
             1:1 — Print each scan
@@ -329,10 +324,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
           <button
             type="button"
             onClick={() => switchMode("bulk")}
-            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
               mode === "bulk"
-                ? "bg-white text-brand-ink shadow-sm"
-                : "text-slate-500 hover:text-brand-ink"
+                ? "bg-white text-brand-ink-900 shadow-card"
+                : "text-brand-ink-400 hover:text-brand-ink-700"
             }`}
           >
             Bulk — Queue then print
@@ -342,11 +337,9 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         {/* Store filter */}
         {stores.length > 1 && (
           <div className="mt-4 flex items-center gap-3">
-            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 shrink-0">
-              Store
-            </label>
+            <label className="section-label shrink-0">Store</label>
             <select
-              className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink focus:outline-none focus:ring-2 focus:ring-brand-red/30"
+              className="input-field !py-2"
               value={selectedStoreId}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
@@ -357,9 +350,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               <option value="all">All stores</option>
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>
-                  {store.name}
-                  {" "}
-                  <span className="capitalize">({store.platform})</span>
+                  {store.name} ({store.platform})
                 </option>
               ))}
             </select>
@@ -367,7 +358,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         )}
 
         {/* Scanner capture form */}
-        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
           <input
             ref={inputRef}
             aria-label="Scanner input"
@@ -378,14 +369,12 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             value={barcode}
           />
 
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-steel/60">
-              Scanner capture
-            </p>
-            <p className="mt-3 text-4xl font-semibold tracking-[0.2em] text-brand-ink">
+          <div className="rounded-2xl border border-dashed border-brand-ink-200 bg-gradient-to-b from-brand-ink-50/80 to-white p-6 text-center">
+            <p className="section-label">Scanner capture</p>
+            <p className="mt-3 text-4xl font-bold tracking-[0.15em] text-brand-ink-900">
               {barcode || (mode === "bulk" ? `QUEUE (${queue.length})` : "READY")}
             </p>
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-brand-ink-400">
               {mode === "bulk"
                 ? "Scan orders to add to queue. Press Enter after each scan."
                 : "Scan to preview and print. Press Enter to submit."}
@@ -396,7 +385,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             {mode === "single" ? (
               <>
                 <button
-                  className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                  className="btn-primary"
                   disabled={isSubmitting || !barcode.trim()}
                   type="submit"
                 >
@@ -404,7 +393,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                 </button>
                 <button
                   type="button"
-                  className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
+                  className="btn-secondary"
                   onClick={() => {
                     setBarcode("");
                     setActiveOrder(null);
@@ -417,7 +406,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                 {activeOrder && singleResult.kind === "error" ? (
                   <button
                     type="button"
-                    className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="btn-secondary disabled:opacity-60"
                     disabled={isSubmitting}
                     onClick={() => void submitSinglePrint(activeOrder)}
                   >
@@ -428,7 +417,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             ) : (
               <>
                 <button
-                  className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-secondary disabled:opacity-60"
                   disabled={isSubmitting || !barcode.trim()}
                   type="submit"
                 >
@@ -436,7 +425,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                  className="btn-primary"
                   disabled={isSubmitting || queuedCount === 0}
                   onClick={() => void printAll()}
                 >
@@ -445,7 +434,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                 {queue.length > 0 ? (
                   <button
                     type="button"
-                    className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="btn-secondary !text-brand-ink-400"
                     disabled={isSubmitting}
                     onClick={() => {
                       setQueue([]);

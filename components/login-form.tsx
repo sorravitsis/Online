@@ -11,6 +11,8 @@ function mapLoginError(error?: string) {
       return "The shared password is incorrect.";
     case "password_config_missing":
       return "The password hash is missing from app_config.";
+    case "too_many_requests":
+      return "Too many login attempts. Please wait a moment.";
     default:
       return error ?? "Unable to sign in.";
   }
@@ -56,14 +58,14 @@ export function LoginForm() {
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-700" htmlFor="password">
+        <label className="block text-sm font-medium text-brand-ink-700" htmlFor="password">
           App password
         </label>
         <input
           autoComplete="current-password"
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-brand-ink outline-none transition focus:border-brand-blue"
+          className="input-field"
           id="password"
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Enter shared password"
@@ -74,17 +76,13 @@ export function LoginForm() {
       </div>
 
       {error ? (
-        <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-brand-red">
+        <p className="rounded-xl border border-brand-red-100 bg-brand-red-50 px-4 py-3 text-sm font-medium text-brand-red-700">
           {error}
         </p>
       ) : null}
 
-      <button
-        className="w-full rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-        disabled={isSubmitting}
-        type="submit"
-      >
-        {isSubmitting ? "Signing in..." : "Sign in"}
+      <button className="btn-primary w-full" disabled={isSubmitting} type="submit">
+        {isSubmitting ? "Signing in…" : "Sign in"}
       </button>
     </form>
   );

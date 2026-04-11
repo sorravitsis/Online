@@ -7,14 +7,16 @@
   --background: #ffffff;
   --foreground: #0f172a;
   --card: rgba(255, 255, 255, 0.97);
-  --border: rgba(148, 163, 184, 0.2);
+  --border: rgba(148, 163, 184, 0.15);
+  --radius: 1rem;
 }
 
 body {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse at top right, rgba(220, 38, 38, 0.06), transparent 40%),
-    radial-gradient(ellipse at bottom left, rgba(220, 38, 38, 0.03), transparent 40%),
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(220, 38, 38, 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(220, 38, 38, 0.04), transparent),
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(248, 250, 252, 1), transparent),
     linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   color: var(--foreground);
 }
@@ -23,9 +25,53 @@ body {
   border-color: var(--border);
 }
 
+/* Enterprise glass card layer */
+@layer components {
+  .glass-card {
+    @apply bg-white/[0.97] backdrop-blur-xl border border-white/60 shadow-card;
+  }
+
+  .glass-card-elevated {
+    @apply bg-white backdrop-blur-xl border border-brand-red-100/40 shadow-elevated;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-b from-brand-red-500 to-brand-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-red-200/50 transition-all hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-glow-red active:scale-[0.98] disabled:cursor-not-allowed disabled:from-brand-ink-300 disabled:to-brand-ink-400 disabled:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink-900 shadow-sm transition-all hover:border-brand-ink-300 hover:bg-brand-ink-50 hover:shadow-card active:scale-[0.98];
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-brand-ink-200 bg-white px-4 py-3 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition-all placeholder:text-brand-ink-400 focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-ink-400;
+  }
+
+  .wordmark {
+    @apply flex items-center gap-2.5;
+  }
+
+  .wordmark-badge {
+    @apply rounded-lg bg-gradient-to-b from-brand-red-500 to-brand-red-700 px-2.5 py-1 text-sm font-black tracking-wide text-white shadow-md shadow-brand-red-200/60;
+  }
+
+  .wordmark-text {
+    @apply text-2xl font-bold tracking-tight text-brand-ink-900;
+  }
+}
+
+/* Animations */
 @keyframes row-flash {
   0% {
-    background-color: rgba(59, 130, 246, 0.18);
+    background-color: rgba(220, 38, 38, 0.08);
   }
   100% {
     background-color: transparent;
