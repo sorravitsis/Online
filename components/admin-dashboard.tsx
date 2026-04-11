@@ -42,6 +42,10 @@ function formatPlatformLabel(platform: Platform) {
   return platform === "lazada" ? "Lazada" : "Shopee";
 }
 
+function formatStoreLabel(store: StoreRow) {
+  return `${store.name} · ${store.shop_id}`;
+}
+
 function formatDateTime(value?: string | null) {
   if (!value) {
     return "Not available";
@@ -742,7 +746,7 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-xl font-semibold tracking-tight text-brand-ink">
-                            {store.name}
+                            {formatStoreLabel(store)}
                           </h3>
                           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
                             {formatPlatformLabel(store.platform)}

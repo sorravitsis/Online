@@ -35,6 +35,10 @@ type StoresApiResponse = {
   error?: string;
 };
 
+function formatStoreLabel(store: StoreRow) {
+  return `${store.name} · ${store.shop_id}`;
+}
+
 export function ScanDashboard({ stores }: ScanDashboardProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -402,7 +406,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               <option value="all">All stores</option>
               {availableStores.map((store) => (
                 <option key={store.id} value={store.id}>
-                  {store.name} ({store.platform})
+                  {formatStoreLabel(store)} ({store.platform})
                 </option>
               ))}
             </select>
@@ -560,7 +564,11 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                       >
                         {activeOrder.store?.platform ?? "unknown"}
                       </span>
-                      <span>{activeOrder.store?.name ?? "Unknown store"}</span>
+                      <span>
+                        {activeOrder.store
+                          ? formatStoreLabel(activeOrder.store)
+                          : "Unknown store"}
+                      </span>
                     </div>
                   </div>
                   <div>

@@ -44,6 +44,10 @@ type StoresApiResponse = {
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000];
 const SEARCH_DEBOUNCE_MS = 350;
 
+function formatStoreLabel(store: StoreRow) {
+  return `${store.name} · ${store.shop_id}`;
+}
+
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
@@ -522,7 +526,7 @@ export function OrdersDashboard({
                 <option value="">All stores</option>
                 {filteredStores.map((store) => (
                   <option key={store.id} value={store.id}>
-                    {store.name}
+                    {formatStoreLabel(store)}
                   </option>
                 ))}
               </select>
@@ -654,7 +658,7 @@ export function OrdersDashboard({
                         {order.platform_order_id}
                       </td>
                       <td className="px-3 py-4 text-brand-ink-600">
-                        {order.store?.name ?? "Unknown store"}
+                        {order.store ? formatStoreLabel(order.store) : "Unknown store"}
                       </td>
                       <td className="px-3 py-4 text-brand-ink-600">
                         {order.buyer_name ?? "-"}
