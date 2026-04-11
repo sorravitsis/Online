@@ -62,9 +62,13 @@ export function OrdersDashboard({
   const [page, setPage] = useState(initialPage);
   const [draftFilters, setDraftFilters] = useState(filters);
   const [isPending, startTransition] = useTransition();
+  const [isSyncing, setIsSyncing] = useState(false);
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshRequestRef = useRef(0);
   const maxWorkDate = getDefaultOrderDate();
 
   useEffect(() => {
@@ -72,60 +76,139 @@ export function OrdersDashboard({
     setTotal(initialTotal);
     setPage(initialPage);
     setDraftFilters(filters);
+    setLastSyncedAt(new Date());
   }, [filters, initialOrders, initialPage, initialTotal]);
 
   useEffect(() => {
     const supabase = tryCreateBrowserClient();
-    if (!supabase) {
-      setRealtimeEnabled(false);
-      return;
-    }
+    let isActive = true;
 
-    const channel = supabase
-      .channel("orders-dashboard-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders"
-        },
-        (payload) => {
-          const record = (payload.new as { id?: string } | null) ?? (payload.old as { id?: string } | null);
-          const changedId = record?.id;
+    function flashRow(orderId: string | null) {
+      if (!orderId) {
+        return;
+      }
 
-          if (changedId) {
-            setFlashOrderId(changedId);
-            if (flashTimeoutRef.current) {
-              clearTimeout(flashTimeoutRef.current);
-            }
-
-            flashTimeoutRef.current = setTimeout(() => {
-              setFlashOrderId(null);
-            }, 2200);
-          }
-
-          startTransition(() => {
-            router.refresh();
-          });
-        }
-      )
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setRealtimeEnabled(false);
-        }
-      });
-
-    setRealtimeEnabled(true);
-
-    return () => {
+      setFlashOrderId(orderId);
       if (flashTimeoutRef.current) {
         clearTimeout(flashTimeoutRef.current);
       }
 
-      void supabase.removeChannel(channel);
+      flashTimeoutRef.current = setTimeout(() => {
+        setFlashOrderId(null);
+      }, 2200);
+    }
+
+    async function refreshOrders(changedId?: string | null) {
+      const requestId = refreshRequestRef.current + 1;
+      refreshRequestRef.current = requestId;
+      setIsSyncing(true);
+
+      try {
+        const search = buildOrderSearchParams(filters).toString();
+        const response = await fetch(`/api/orders?${search}`, {
+          cache: "no-store"
+        });
+        const json = (await response.json()) as OrdersApiResponse;
+
+        if (!response.ok || !json.success || !json.data) {
+          throw new Error(json.error ?? "Unable to refresh orders.");
+        }
+
+        if (!isActive || requestId !== refreshRequestRef.current) {
+          return;
+        }
+
+        setOrders(json.data.orders);
+        setTotal(json.data.total);
+        setPage(json.data.page);
+        setLastSyncedAt(new Date());
+
+        const highlightedId =
+          changedId && json.data.orders.some((order) => order.id === changedId)
+            ? changedId
+            : json.data.orders[0]?.id ?? null;
+
+        flashRow(highlightedId);
+      } catch (error) {
+        console.error("Unable to refresh orders dashboard", error);
+      } finally {
+        if (isActive && requestId === refreshRequestRef.current) {
+          setIsSyncing(false);
+        }
+      }
+    }
+
+    function scheduleRefresh(changedId?: string | null) {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      refreshTimeoutRef.current = setTimeout(() => {
+        void refreshOrders(changedId);
+      }, 400);
+    }
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        scheduleRefresh();
+      }
+    }, 15000);
+
+    let unsubscribe = () => {
+      setRealtimeEnabled(false);
     };
-  }, [router]);
+
+    if (!supabase) {
+      setRealtimeEnabled(false);
+    } else {
+      const channel = supabase
+        .channel("orders-dashboard-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders"
+          },
+          (payload) => {
+            const record =
+              (payload.new as { id?: string } | null) ??
+              (payload.old as { id?: string } | null);
+
+            scheduleRefresh(record?.id ?? null);
+          }
+        )
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            setRealtimeEnabled(false);
+            return;
+          }
+
+          if (status === "SUBSCRIBED") {
+            setRealtimeEnabled(true);
+          }
+        });
+
+      unsubscribe = () => {
+        void supabase.removeChannel(channel);
+      };
+    }
+
+    return () => {
+      isActive = false;
+
+      if (flashTimeoutRef.current) {
+        clearTimeout(flashTimeoutRef.current);
+      }
+
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      clearInterval(pollInterval);
+      unsubscribe();
+    };
+  }, [filters]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / pageSize)),
@@ -182,15 +265,15 @@ export function OrdersDashboard({
                     realtimeEnabled ? "bg-emerald-500" : "bg-amber-500"
                   }`}
                 />
-                {realtimeEnabled ? "Realtime connected" : "Realtime unavailable"}
+                {realtimeEnabled ? "Realtime connected" : "Polling fallback"}
               </span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-brand-ink">
               AWB order queue
             </h1>
             <p className="text-sm text-slate-500">
-              Filter by store, status, or work date, then let realtime keep the
-              queue in sync while the team prints.
+              Filter by store, status, or work date, then let live sync keep the
+              queue current while n8n writes new orders in the background.
             </p>
           </div>
 
@@ -310,12 +393,13 @@ export function OrdersDashboard({
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-500">
               <span>
-                {isPending
-                  ? "Updating list..."
+                {isPending || isSyncing
+                  ? "Syncing latest orders..."
                   : realtimeEnabled
                     ? "Live queue ready"
-                    : "Manual refresh mode"}
+                    : "Auto-refresh every 15s"}
               </span>
+              <span>Last sync {lastSyncedAt.toLocaleTimeString()}</span>
             </div>
           </div>
 
