@@ -468,10 +468,10 @@ export function OrdersDashboard({
               />
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Platform
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 onChange={(event) =>
                   handlePlatformChange(
                     event.target.value === "shopee" || event.target.value === "lazada"
@@ -487,10 +487,10 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Status
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
@@ -507,10 +507,10 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Store
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
@@ -528,10 +528,10 @@ export function OrdersDashboard({
               </select>
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Work date
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 max={maxWorkDate}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
@@ -544,10 +544,10 @@ export function OrdersDashboard({
               />
             </label>
 
-            <label className="space-y-2 text-sm font-medium text-slate-700">
+            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
               Rows per page
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                className="input-field"
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
@@ -574,7 +574,7 @@ export function OrdersDashboard({
                 {isPending ? "Refreshing..." : "Apply filters"}
               </button>
               <button
-                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
+                className="btn-secondary"
                 onClick={() =>
                   setDraftFilters(normalizeOrderFilters())
                 }
@@ -586,15 +586,15 @@ export function OrdersDashboard({
           </form>
         </section>
 
-        <section className="rounded-3xl border bg-white p-6 shadow-md shadow-slate-100">
+        <section className="glass-card rounded-3xl p-6">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-brand-ink">Orders</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-brand-ink-900">Orders</h2>
+              <p className="text-sm text-brand-ink-500">
                 Showing page {page} of {totalPages} with {total} matching orders
               </p>
             </div>
-            <div className="flex items-center gap-3 text-sm text-slate-500">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-brand-ink-400">
               <span>
                 {isPending || isSyncing
                   ? "Syncing latest orders..."
@@ -608,21 +608,21 @@ export function OrdersDashboard({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <table className="min-w-full divide-y divide-brand-ink-100 text-sm">
               <thead>
-                <tr className="text-left text-slate-500">
-                  <th className="px-3 py-3 font-medium">Order ID</th>
-                  <th className="px-3 py-3 font-medium">Store</th>
-                  <th className="px-3 py-3 font-medium">Buyer</th>
-                  <th className="px-3 py-3 font-medium">Items</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">Created</th>
+                <tr className="text-left text-brand-ink-400">
+                  <th className="px-3 py-3 font-semibold">Order ID</th>
+                  <th className="px-3 py-3 font-semibold">Store</th>
+                  <th className="px-3 py-3 font-semibold">Buyer</th>
+                  <th className="px-3 py-3 font-semibold">Items</th>
+                  <th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 font-semibold">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-brand-ink-100">
                 {orders.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-8 text-center text-slate-500" colSpan={6}>
+                    <td className="px-3 py-8 text-center text-brand-ink-400" colSpan={6}>
                       No orders found for the selected filters.
                     </td>
                   </tr>
@@ -630,18 +630,18 @@ export function OrdersDashboard({
                   orders.map((order) => (
                     <tr
                       key={order.id}
-                      className={`align-top transition ${flashOrderId === order.id ? "order-row-flash" : ""}`}
+                      className={`align-top transition-colors hover:bg-brand-ink-50 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
                     >
-                      <td className="px-3 py-4 font-medium text-brand-ink">
+                      <td className="px-3 py-4 font-medium text-brand-ink-900">
                         {order.platform_order_id}
                       </td>
-                      <td className="px-3 py-4 text-slate-600">
+                      <td className="px-3 py-4 text-brand-ink-600">
                         {order.store?.name ?? "Unknown store"}
                       </td>
-                      <td className="px-3 py-4 text-slate-600">
+                      <td className="px-3 py-4 text-brand-ink-600">
                         {order.buyer_name ?? "-"}
                       </td>
-                      <td className="px-3 py-4 text-slate-600">
+                      <td className="px-3 py-4 text-brand-ink-600">
                         {Array.isArray(order.items_json)
                           ? order.items_json.length
                           : 0}{" "}
@@ -654,7 +654,7 @@ export function OrdersDashboard({
                           {formatOrderStatus(order.awb_status)}
                         </span>
                       </td>
-                      <td className="px-3 py-4 text-slate-500">
+                      <td className="px-3 py-4 text-brand-ink-400">
                         {new Date(order.created_at).toLocaleString()}
                       </td>
                     </tr>
@@ -664,17 +664,17 @@ export function OrdersDashboard({
             </table>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">
+          <div className="mt-6 flex flex-col gap-3 border-t border-brand-ink-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-brand-ink-500">
               Page {page} of {totalPages}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <form className="flex items-center gap-2" onSubmit={handlePageJump}>
-                <label className="text-sm text-slate-500" htmlFor="orders-page-input">
+                <label className="text-sm text-brand-ink-500" htmlFor="orders-page-input">
                   Go to page
                 </label>
                 <input
-                  className="w-20 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink outline-none transition focus:border-brand-blue"
+                  className="w-20 rounded-full border border-brand-ink-200 bg-white px-3 py-2 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100"
                   id="orders-page-input"
                   inputMode="numeric"
                   min={1}
@@ -683,7 +683,7 @@ export function OrdersDashboard({
                   value={pageInput}
                 />
                 <button
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={isPending}
                   type="submit"
                 >
@@ -692,22 +692,22 @@ export function OrdersDashboard({
               </form>
 
               <div className="flex gap-3">
-              <button
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={page <= 1 || isPending}
-                onClick={() => handlePageChange(page - 1)}
-                type="button"
-              >
-                Previous
-              </button>
-              <button
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={page >= totalPages || isPending}
-                onClick={() => handlePageChange(page + 1)}
-                type="button"
-              >
-                Next
-              </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={page <= 1 || isPending}
+                  onClick={() => handlePageChange(page - 1)}
+                  type="button"
+                >
+                  Previous
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={page >= totalPages || isPending}
+                  onClick={() => handlePageChange(page + 1)}
+                  type="button"
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>

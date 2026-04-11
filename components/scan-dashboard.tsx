@@ -138,13 +138,11 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
     try {
       const order = await lookupOrder(barcodeValue);
       if (!order) {
-        // flash error briefly in barcode area — keep queue intact
         setBarcode("NOT FOUND");
         setTimeout(() => setBarcode(""), 1000);
         return;
       }
 
-      // block non-printable statuses
       if (order.awb_status === "printed") {
         setBarcode("ALREADY PRINTED");
         setTimeout(() => setBarcode(""), 1500);
@@ -156,7 +154,6 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         return;
       }
 
-      // deduplicate
       if (queue.some((q) => q.order.id === order.id)) {
         setBarcode("ALREADY ADDED");
         setTimeout(() => setBarcode(""), 1000);
@@ -260,7 +257,6 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         return;
       }
 
-      // Show order immediately so staff can see it
       setActiveOrder(order);
 
       if (order.awb_status === "printed") {
@@ -369,12 +365,18 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             value={barcode}
           />
 
-          <div className="rounded-2xl border border-dashed border-brand-ink-200 bg-gradient-to-b from-brand-ink-50/80 to-white p-6 text-center">
-            <p className="section-label">Scanner capture</p>
-            <p className="mt-3 text-4xl font-bold tracking-[0.15em] text-brand-ink-900">
+          {/* Terminal-style scanner display */}
+          <div className="relative overflow-hidden rounded-2xl border border-brand-ink-800 bg-brand-ink-950 p-6 text-center">
+            <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(255,255,255,0.018)_3px,rgba(255,255,255,0.018)_4px)]" />
+            <p className="section-label text-brand-ink-500">Scanner capture</p>
+            <p
+              className={`mt-3 font-mono text-4xl font-bold tracking-[0.15em] transition-colors ${
+                barcode ? "text-white" : "text-emerald-400"
+              }`}
+            >
               {barcode || (mode === "bulk" ? `QUEUE (${queue.length})` : "READY")}
             </p>
-            <p className="mt-3 text-sm text-brand-ink-400">
+            <p className="mt-3 text-sm text-brand-ink-500">
               {mode === "bulk"
                 ? "Scan orders to add to queue. Press Enter after each scan."
                 : "Scan to preview and print. Press Enter to submit."}
@@ -454,13 +456,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         {mode === "single" && (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             {/* Order preview */}
-            <div className="rounded-2xl border bg-slate-50 p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-steel/60">
-                Order preview
-              </p>
+            <div className="glass-card rounded-2xl p-5">
+              <p className="section-label">Order preview</p>
               {activeOrder ? (
-                <div className="mt-4 space-y-3 text-sm text-slate-600">
-                  {/* Prominent status badge */}
+                <div className="mt-4 space-y-3 text-sm text-brand-ink-600">
                   <div>
                     {activeOrder.awb_status === "pending" && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -481,21 +480,20 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                       </span>
                     )}
                     {activeOrder.awb_status === "failed" && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-brand-red">
-                        <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-red-100 px-3 py-1 text-xs font-semibold text-brand-red-600">
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-red-500" />
                         Print failed — retry available
                       </span>
                     )}
                   </div>
-
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Order</p>
-                    <p className="mt-1 text-base font-semibold text-brand-ink">
+                    <p className="section-label">Order</p>
+                    <p className="mt-1 text-base font-semibold text-brand-ink-900">
                       {activeOrder.platform_order_id}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Store</p>
+                    <p className="section-label">Store</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         className={`rounded px-1.5 py-0.5 text-xs font-semibold uppercase ${
@@ -510,25 +508,25 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Buyer</p>
+                    <p className="section-label">Buyer</p>
                     <p className="mt-1">{activeOrder.buyer_name ?? "-"}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    <p className="section-label">
                       Items ({Array.isArray(activeOrder.items_json) ? activeOrder.items_json.length : 0})
                     </p>
                     {(() => {
                       const items = extractOrderItems(activeOrder.items_json);
                       const rtsItems = items.filter((item) => item.trackingCode ?? item.packageId);
                       if (items.length === 0) {
-                        return <p className="mt-1 text-slate-400">No item details</p>;
+                        return <p className="mt-1 text-brand-ink-400">No item details</p>;
                       }
                       return (
                         <div className="mt-1 space-y-1">
                           {items.map((item, i) => (
                             <div key={i} className="flex items-start justify-between gap-2">
-                              <span className="text-brand-ink">{item.name}</span>
-                              <span className="shrink-0 text-slate-400">×{item.qty}</span>
+                              <span className="text-brand-ink-900">{item.name}</span>
+                              <span className="shrink-0 text-brand-ink-400">×{item.qty}</span>
                             </div>
                           ))}
                           {rtsItems.length > 0 && (
@@ -542,20 +540,18 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                   </div>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-4 text-sm text-brand-ink-400">
                   Scan a barcode or platform order ID to preview the order.
                 </p>
               )}
             </div>
 
             {/* Print status */}
-            <div className="rounded-2xl border bg-slate-50 p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-steel/60">
-                Print status
-              </p>
+            <div className="glass-card rounded-2xl p-5">
+              <p className="section-label">Print status</p>
 
               {singleResult.kind === "idle" && (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-4 text-sm text-brand-ink-400">
                   Ready for the next scan. Press Enter on the scanner to submit.
                 </p>
               )}
@@ -605,8 +601,8 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               )}
 
               {singleResult.kind === "error" && (
-                <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
-                  <p className="text-sm font-semibold text-brand-red">{singleResult.message}</p>
+                <div className="mt-4 rounded-2xl border border-brand-red-100 bg-brand-red-50 p-4">
+                  <p className="text-sm font-semibold text-brand-red-600">{singleResult.message}</p>
                 </div>
               )}
             </div>
@@ -616,7 +612,6 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         {/* ── Bulk mode queue ─────────────────────────────────────────────── */}
         {mode === "bulk" && (
           <div className="mt-6">
-            {/* Summary bar when done */}
             {bulkDone && (
               <div className="mb-4 flex gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-3 text-sm">
                 <span className="font-semibold text-emerald-700">Batch done</span>
@@ -624,41 +619,42 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                   <span className="text-emerald-700">{printedCount} printed</span>
                 )}
                 {failedCount > 0 && (
-                  <span className="font-semibold text-brand-red">{failedCount} failed</span>
+                  <span className="font-semibold text-brand-red-600">{failedCount} failed</span>
                 )}
               </div>
             )}
 
             {queue.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-                <p className="text-sm text-slate-500">
-                  Queue is empty. Scan orders to add them here, then press <strong>Print All</strong>.
+              <div className="rounded-2xl border border-dashed border-brand-ink-200 bg-brand-ink-50 p-8 text-center">
+                <p className="text-sm text-brand-ink-400">
+                  Queue is empty. Scan orders to add them here, then press{" "}
+                  <strong className="text-brand-ink-700">Print All</strong>.
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-slate-200">
+              <div className="overflow-hidden rounded-2xl border border-brand-ink-200">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-brand-ink-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink-400">
                         Order
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink-400">
                         Buyer
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink-400">
                         AWB
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink-400">
                         Status
                       </th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-brand-ink-100">
                     {queue.map((q) => (
-                      <tr key={q.order.id} className="bg-white">
-                        <td className="px-4 py-3 font-medium text-brand-ink">
+                      <tr key={q.order.id} className="bg-white transition-colors hover:bg-brand-ink-50">
+                        <td className="px-4 py-3 font-medium text-brand-ink-900">
                           {q.order.platform_order_id}
                           <span
                             className={`ml-2 rounded px-1.5 py-0.5 text-xs font-semibold uppercase ${
@@ -670,15 +666,15 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                             {q.order.store?.platform ?? "?"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-brand-ink-500">
                           {q.order.buyer_name ?? "-"}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                        <td className="px-4 py-3 font-mono text-xs text-brand-ink-500">
                           {q.awbNumber ?? "-"}
                         </td>
                         <td className="px-4 py-3">
                           {q.printStatus === "queued" && (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                            <span className="rounded-full bg-brand-ink-100 px-2.5 py-1 text-xs font-medium text-brand-ink-500">
                               Queued
                             </span>
                           )}
@@ -699,7 +695,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                           )}
                           {q.printStatus === "failed" && (
                             <span
-                              className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-brand-red"
+                              className="rounded-full bg-brand-red-100 px-2.5 py-1 text-xs font-medium text-brand-red-600"
                               title={q.error}
                             >
                               Failed
@@ -710,7 +706,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                           {q.printStatus === "queued" && (
                             <button
                               type="button"
-                              className="text-xs text-slate-400 hover:text-brand-red"
+                              className="text-xs text-brand-ink-400 transition-colors hover:text-brand-red-600"
                               onClick={() => {
                                 setQueue((prev) => prev.filter((x) => x.order.id !== q.order.id));
                                 refocusScannerInput();

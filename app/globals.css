@@ -14,10 +14,11 @@
 body {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(220, 38, 38, 0.06), transparent),
-    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(220, 38, 38, 0.04), transparent),
-    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(248, 250, 252, 1), transparent),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    radial-gradient(ellipse 70% 45% at 5% -5%, rgba(220, 38, 38, 0.10), transparent),
+    radial-gradient(ellipse 50% 35% at 95% 108%, rgba(220, 38, 38, 0.07), transparent),
+    radial-gradient(ellipse 40% 30% at 78% 18%, rgba(239, 68, 68, 0.05), transparent),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(248, 250, 252, 1), transparent),
+    linear-gradient(160deg, #ffffff 0%, #f8fafc 55%, #f1f5f9 100%);
   color: var(--foreground);
 }
 
@@ -28,19 +29,19 @@ body {
 /* Enterprise glass card layer */
 @layer components {
   .glass-card {
-    @apply bg-white/[0.97] backdrop-blur-xl border border-white/60 shadow-card;
+    @apply bg-white/[0.97] backdrop-blur-xl border border-white/70 shadow-card;
   }
 
   .glass-card-elevated {
-    @apply bg-white backdrop-blur-xl border border-brand-red-100/40 shadow-elevated;
+    @apply bg-white backdrop-blur-xl border border-brand-red-100/50 shadow-elevated;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-b from-brand-red-500 to-brand-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-red-200/50 transition-all hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-glow-red active:scale-[0.98] disabled:cursor-not-allowed disabled:from-brand-ink-300 disabled:to-brand-ink-400 disabled:shadow-none;
+    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-b from-brand-red-500 to-brand-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-red-200/50 transition-all duration-200 hover:-translate-y-px hover:from-brand-red-600 hover:to-brand-red-700 hover:shadow-glow-red active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:cursor-not-allowed disabled:from-brand-ink-300 disabled:to-brand-ink-400 disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink-900 shadow-sm transition-all hover:border-brand-ink-300 hover:bg-brand-ink-50 hover:shadow-card active:scale-[0.98];
+    @apply inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 hover:shadow-card active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
   .badge {
@@ -48,7 +49,7 @@ body {
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-brand-ink-200 bg-white px-4 py-3 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition-all placeholder:text-brand-ink-400 focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100;
+    @apply w-full rounded-xl border border-brand-ink-200 bg-white px-4 py-3 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition-all duration-150 placeholder:text-brand-ink-400 focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100;
   }
 
   .section-label {
@@ -70,12 +71,8 @@ body {
 
 /* Animations */
 @keyframes row-flash {
-  0% {
-    background-color: rgba(220, 38, 38, 0.08);
-  }
-  100% {
-    background-color: transparent;
-  }
+  0% { background-color: rgba(220, 38, 38, 0.08); }
+  100% { background-color: transparent; }
 }
 
 .order-row-flash {
