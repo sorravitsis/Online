@@ -382,12 +382,6 @@ export function OrdersDashboard({
               Scan Mode
             </Link>
             <Link
-              href="/batch"
-              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
-            >
-              Batch Print
-            </Link>
-            <Link
               href="/admin"
               className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
             >

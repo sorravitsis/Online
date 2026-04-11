@@ -426,9 +426,9 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
               </Link>
               <Link
                 className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-brand-ink transition hover:border-slate-300 hover:bg-slate-50"
-                href="/batch"
+                href="/scan"
               >
-                Batch print
+                Scan &amp; print
               </Link>
             </div>
           </div>
