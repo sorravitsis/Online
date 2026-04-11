@@ -36,7 +36,7 @@ type StoresApiResponse = {
 };
 
 function formatStoreLabel(store: StoreRow) {
-  return `${store.name} · ${store.shop_id}`;
+  return store.name;
 }
 
 export function ScanDashboard({ stores }: ScanDashboardProps) {
@@ -47,6 +47,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
   const [availableStores, setAvailableStores] = useState(stores);
   const [mode, setMode] = useState<ScanMode>("single");
   const [barcode, setBarcode] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState<"all" | "shopee" | "lazada">("all");
   const [selectedStoreId, setSelectedStoreId] = useState<string>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -119,6 +120,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
     }
   }, [availableStores, selectedStoreId]);
 
+  const filteredStores = selectedPlatform === "all"
+    ? availableStores
+    : availableStores.filter((s) => s.platform === selectedPlatform);
+
   function refocusScannerInput() {
     if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
     focusTimerRef.current = setTimeout(() => {
@@ -142,6 +147,9 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       barcode: barcodeValue.trim(),
       limit: "1"
     });
+    if (selectedPlatform !== "all") {
+      params.set("platform", selectedPlatform);
+    }
     if (selectedStoreId !== "all") {
       params.set("store_id", selectedStoreId);
     }
@@ -390,28 +398,46 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
           </button>
         </div>
 
-        {/* Store filter */}
-        {availableStores.length > 1 && (
-          <div className="mt-4 flex items-center gap-3">
-            <label className="section-label shrink-0">Store</label>
-            <select
-              className="input-field !py-2"
-              value={selectedStoreId}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                setSelectedStoreId(e.target.value);
-                refocusScannerInput();
-              }}
-            >
-              <option value="all">All stores</option>
-              {availableStores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {formatStoreLabel(store)} ({store.platform})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Platform + Store filters */}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="section-label shrink-0">Platform</label>
+          <select
+            className="input-field !py-2"
+            value={selectedPlatform}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              setSelectedPlatform(e.target.value as "all" | "shopee" | "lazada");
+              setSelectedStoreId("all");
+              refocusScannerInput();
+            }}
+          >
+            <option value="all">All platforms</option>
+            <option value="shopee">Shopee</option>
+            <option value="lazada">Lazada</option>
+          </select>
+
+          {filteredStores.length > 1 && (
+            <>
+              <label className="section-label shrink-0">Store</label>
+              <select
+                className="input-field !py-2"
+                value={selectedStoreId}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  setSelectedStoreId(e.target.value);
+                  refocusScannerInput();
+                }}
+              >
+                <option value="all">All stores</option>
+                {filteredStores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {formatStoreLabel(store)}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
 
         {/* Scanner capture form */}
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
@@ -565,9 +591,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                         {activeOrder.store?.platform ?? "unknown"}
                       </span>
                       <span>
-                        {activeOrder.store
-                          ? formatStoreLabel(activeOrder.store)
-                          : "Unknown store"}
+                        {activeOrder.store?.name ?? "Unknown store"}
                       </span>
                     </div>
                   </div>
