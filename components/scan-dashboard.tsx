@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { readJsonResponse } from "@/lib/http";
 import { extractOrderItems, mapScanError, mapScanSuccess } from "@/lib/scan";
-import type { OrderWithStore } from "@/lib/types";
+import type { OrderWithStore, StoreRow } from "@/lib/types";
 
 type ScanMode = "single" | "bulk";
 
@@ -21,13 +21,18 @@ type SingleResult =
   | { kind: "success"; awbNumber: string; order: OrderWithStore; status: "printed" | "queued" }
   | { kind: "error"; message: string };
 
-export function ScanDashboard() {
+type ScanDashboardProps = {
+  stores: StoreRow[];
+};
+
+export function ScanDashboard({ stores }: ScanDashboardProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [mode, setMode] = useState<ScanMode>("single");
   const [barcode, setBarcode] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<string>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Single mode state
@@ -71,9 +76,14 @@ export function ScanDashboard() {
 
   // ── lookup order by barcode ────────────────────────────────────────────────
   async function lookupOrder(barcodeValue: string): Promise<OrderWithStore | null> {
-    const res = await fetch(
-      `/api/orders?barcode=${encodeURIComponent(barcodeValue.trim())}&limit=1`
-    );
+    const params = new URLSearchParams({
+      barcode: barcodeValue.trim(),
+      limit: "1"
+    });
+    if (selectedStoreId !== "all") {
+      params.set("store_id", selectedStoreId);
+    }
+    const res = await fetch(`/api/orders?${params.toString()}`);
     const json = await readJsonResponse<{
       success: boolean;
       data?: { orders?: OrderWithStore[] };
@@ -299,8 +309,34 @@ export function ScanDashboard() {
           </button>
         </div>
 
+        {/* Store filter */}
+        {stores.length > 1 && (
+          <div className="mt-4 flex items-center gap-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 shrink-0">
+              Store
+            </label>
+            <select
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-brand-ink focus:outline-none focus:ring-2 focus:ring-brand-red/30"
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value);
+                refocusScannerInput();
+              }}
+            >
+              <option value="all">All stores</option>
+              {stores.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
+                  {" "}
+                  <span className="capitalize">({store.platform})</span>
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Scanner capture form */}
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
           <input
             ref={inputRef}
             aria-label="Scanner input"
