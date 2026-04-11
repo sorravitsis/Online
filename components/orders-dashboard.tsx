@@ -453,7 +453,7 @@ export function OrdersDashboard({
         </header>
 
         <section className="glass-card rounded-3xl p-6">
-          <form className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_1fr_1fr_0.9fr_auto]" onSubmit={handleFilterSubmit}>
+          <form className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_1fr_1fr_1.8fr_auto]" onSubmit={handleFilterSubmit}>
             <label className="space-y-2 text-sm font-medium text-brand-ink-700 xl:col-span-2">
               Search order
               <input
@@ -534,35 +534,39 @@ export function OrdersDashboard({
 
             <div className="space-y-2">
               <span className="block text-sm font-medium text-brand-ink-700">Date range</span>
-              <div className="flex flex-col gap-1.5">
-                <input
-                  className="input-field !py-2 !text-xs"
-                  max={maxWorkDate}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      dateFrom: event.target.value,
-                      dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
-                    }))
-                  }
-                  title="From date"
-                  type="date"
-                  value={draftFilters.dateFrom}
-                />
-                <input
-                  className="input-field !py-2 !text-xs"
-                  max={maxWorkDate}
-                  min={draftFilters.dateFrom}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      dateTo: event.target.value
-                    }))
-                  }
-                  title="To date"
-                  type="date"
-                  value={draftFilters.dateTo}
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="section-label">From</span>
+                  <input
+                    className="input-field !py-2 !text-xs"
+                    max={maxWorkDate}
+                    onChange={(event) =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        dateFrom: event.target.value,
+                        dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
+                      }))
+                    }
+                    type="date"
+                    value={draftFilters.dateFrom}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="section-label">To</span>
+                  <input
+                    className="input-field !py-2 !text-xs"
+                    max={maxWorkDate}
+                    min={draftFilters.dateFrom}
+                    onChange={(event) =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        dateTo: event.target.value
+                      }))
+                    }
+                    type="date"
+                    value={draftFilters.dateTo}
+                  />
+                </div>
               </div>
             </div>
 
