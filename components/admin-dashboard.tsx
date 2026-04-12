@@ -131,6 +131,10 @@ function clampBatchLimit(value: number) {
   return Math.min(50, Math.max(1, Math.trunc(value)));
 }
 
+function passwordsMatch(a: string, b: string): boolean {
+  return a === b;
+}
+
 function matchesStoreFilters(
   store: StoreRow,
   platformFilter: PlatformFilter,
@@ -366,7 +370,7 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
   async function savePassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    if (!passwordsMatch(passwordForm.newPassword, passwordForm.confirmPassword)) {
       setPasswordState({
         type: "error",
         message: mapAdminError("password_confirmation_mismatch")
