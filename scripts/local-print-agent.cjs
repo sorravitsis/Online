@@ -154,19 +154,20 @@ async function runOnce() {
 async function main() {
   console.log(`[print-agent] started as ${agentName}${printerName ? ` on ${printerName}` : ""}`);
 
-  let running = true;
+  const controller = new AbortController();
+  const { signal } = controller;
 
   function shutdown() {
     console.log("[print-agent] shutting down…");
-    running = false;
+    controller.abort();
   }
 
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
 
-  while (running) {
+  while (!signal.aborted) {
     const didWork = await runOnce();
-    if (running && !didWork) {
+    if (!signal.aborted && !didWork) {
       await sleep(intervalMs);
     }
   }
