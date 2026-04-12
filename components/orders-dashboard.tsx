@@ -81,6 +81,7 @@ export function OrdersDashboard({
   const [isPending, startTransition] = useTransition();
   const [isSyncing, setIsSyncing] = useState(false);
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -617,7 +618,31 @@ export function OrdersDashboard({
                       className={`align-top transition-colors hover:bg-brand-ink-50 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
                     >
                       <td className="px-3 py-4 font-medium text-brand-ink-900">
-                        {order.platform_order_id}
+                        <span className="inline-flex items-center gap-1.5">
+                          {order.platform_order_id}
+                          <button
+                            aria-label="Copy order ID"
+                            className="rounded p-0.5 text-brand-ink-300 transition hover:text-brand-ink-600"
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(order.platform_order_id).then(() => {
+                                setCopiedOrderId(order.id);
+                                setTimeout(() => setCopiedOrderId(null), 1500);
+                              });
+                            }}
+                          >
+                            {copiedOrderId === order.id ? (
+                              <svg className="h-3.5 w-3.5 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <rect height="13" rx="2" width="13" x="9" y="9" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" />
+                              </svg>
+                            )}
+                          </button>
+                        </span>
                       </td>
                       <td className="px-3 py-4 text-brand-ink-600">
                         {order.store ? formatStoreLabel(order.store) : "Unknown store"}
