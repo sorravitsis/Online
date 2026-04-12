@@ -35,6 +35,8 @@ type StoresApiResponse = {
   error?: string;
 };
 
+const FILTER_ALL = "all" as const;
+
 function formatStoreLabel(store: StoreRow) {
   return store.name;
 }
@@ -77,8 +79,8 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
   const [availableStores, setAvailableStores] = useState(stores);
   const [mode, setMode] = useState<ScanMode>("single");
   const [barcode, setBarcode] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState<"all" | "shopee" | "lazada">("all");
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("all");
+  const [selectedPlatform, setSelectedPlatform] = useState<"all" | "shopee" | "lazada">(FILTER_ALL);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>(FILTER_ALL);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Single mode state
@@ -143,14 +145,14 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
 
   useEffect(() => {
     if (
-      selectedStoreId !== "all" &&
+      selectedStoreId !== FILTER_ALL &&
       !availableStores.some((store) => store.id === selectedStoreId)
     ) {
-      setSelectedStoreId("all");
+      setSelectedStoreId(FILTER_ALL);
     }
   }, [availableStores, selectedStoreId]);
 
-  const filteredStores = selectedPlatform === "all"
+  const filteredStores = selectedPlatform === FILTER_ALL
     ? availableStores
     : availableStores.filter((s) => s.platform === selectedPlatform);
 
@@ -177,10 +179,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       barcode: barcodeValue.trim(),
       limit: "1"
     });
-    if (selectedPlatform !== "all") {
+    if (selectedPlatform !== FILTER_ALL) {
       params.set("platform", selectedPlatform);
     }
-    if (selectedStoreId !== "all") {
+    if (selectedStoreId !== FILTER_ALL) {
       params.set("store_id", selectedStoreId);
     }
     const res = await fetch(`/api/orders?${params.toString()}`);
@@ -414,7 +416,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => {
               setSelectedPlatform(e.target.value as "all" | "shopee" | "lazada");
-              setSelectedStoreId("all");
+              setSelectedStoreId(FILTER_ALL);
               refocusScannerInput();
             }}
           >

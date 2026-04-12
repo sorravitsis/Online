@@ -10,17 +10,17 @@ type WarehousePageProps = {
   readonly searchParams?: Readonly<Record<string, string | string[] | undefined>>;
 };
 
+function resolveRawPlatform(value: string | string[] | undefined) {
+  if (typeof value !== "string") return undefined;
+  return value === "shopee" || value === "lazada" ? value : undefined;
+}
+
 export default async function WarehousePage({
   searchParams
 }: WarehousePageProps) {
   const filters = normalizeOrderFilters({
     status: typeof searchParams?.status === "string" ? searchParams.status : undefined,
-    platform:
-      typeof searchParams?.platform === "string"
-        ? searchParams.platform === "shopee" || searchParams.platform === "lazada"
-          ? searchParams.platform
-          : undefined
-        : undefined,
+    platform: resolveRawPlatform(searchParams?.platform),
     storeId:
       typeof searchParams?.store_id === "string"
         ? searchParams.store_id
