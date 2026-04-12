@@ -154,12 +154,24 @@ async function runOnce() {
 async function main() {
   console.log(`[print-agent] started as ${agentName}${printerName ? ` on ${printerName}` : ""}`);
 
-  while (true) {
+  let running = true;
+
+  function shutdown() {
+    console.log("[print-agent] shutting down…");
+    running = false;
+  }
+
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+
+  while (running) {
     const didWork = await runOnce();
-    if (!didWork) {
+    if (running && !didWork) {
       await sleep(intervalMs);
     }
   }
+
+  console.log("[print-agent] stopped.");
 }
 
 main().catch((error) => {

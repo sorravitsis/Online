@@ -131,6 +131,27 @@ function clampBatchLimit(value: number) {
   return Math.min(50, Math.max(1, Math.trunc(value)));
 }
 
+function matchesStoreFilters(
+  store: StoreRow,
+  platformFilter: PlatformFilter,
+  activityFilter: ActivityFilter,
+  normalizedSearch: string
+): boolean {
+  const connection = getConnectionStatus(store);
+
+  if (platformFilter !== "all" && store.platform !== platformFilter) return false;
+  if (activityFilter === "active" && !store.is_active) return false;
+  if (activityFilter === "inactive" && store.is_active) return false;
+  if (activityFilter === "attention" && store.is_active && connection.tone === "emerald") return false;
+  if (!normalizedSearch) return true;
+
+  const haystack = [store.name, store.shop_id, formatPlatformLabel(store.platform)]
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(normalizedSearch);
+}
+
 export function AdminDashboard({ initialStores }: AdminDashboardProps) {
   const searchParams = useSearchParams();
   const [stores, setStores] = useState(initialStores);
@@ -244,43 +265,9 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
 
   const filteredStores = useMemo(() => {
     return [...stores]
-      .filter((store) => {
-        const connection = getConnectionStatus(store);
-
-        if (platformFilter !== "all" && store.platform !== platformFilter) {
-          return false;
-        }
-
-        if (activityFilter === "active" && !store.is_active) {
-          return false;
-        }
-
-        if (activityFilter === "inactive" && store.is_active) {
-          return false;
-        }
-
-        if (
-          activityFilter === "attention" &&
-          store.is_active &&
-          connection.tone === "emerald"
-        ) {
-          return false;
-        }
-
-        if (!normalizedSearch) {
-          return true;
-        }
-
-        const haystack = [
-          store.name,
-          store.shop_id,
-          formatPlatformLabel(store.platform)
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        return haystack.includes(normalizedSearch);
-      })
+      .filter((store) =>
+        matchesStoreFilters(store, platformFilter, activityFilter, normalizedSearch)
+      )
       .sort((left, right) => {
         const leftConnection = getConnectionStatus(left);
         const rightConnection = getConnectionStatus(right);

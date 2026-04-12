@@ -3,6 +3,15 @@ import { failure, success } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { processSingleOrderPrint } from "@/lib/print-workflow";
 
+const CONFLICT_ERRORS = new Set(["already_printed", "locked", "order_not_pending"]);
+
+function printErrorStatus(error: string | undefined): number {
+  if (!error) return 500;
+  if (CONFLICT_ERRORS.has(error)) return 409;
+  if (error === "order_not_found") return 404;
+  return 500;
+}
+
 export async function POST(request: Request) {
   let body: { orderId?: string };
 
@@ -30,18 +39,7 @@ export async function POST(request: Request) {
     const result = await processSingleOrderPrint(body.orderId, sessionId);
 
     if (result.status === "failed") {
-      const status =
-        result.error === "already_printed"
-          ? 409
-          : result.error === "locked"
-            ? 409
-            : result.error === "order_not_pending"
-              ? 409
-            : result.error === "order_not_found"
-              ? 404
-              : 500;
-
-      return failure(result.error ?? "print_failed", status);
+      return failure(result.error ?? "print_failed", printErrorStatus(result.error));
     }
 
     return success({
@@ -50,9 +48,7 @@ export async function POST(request: Request) {
       status: result.status
     });
   } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Unable to print order.",
-      500
-    );
+    console.error("awb single POST error:", error);
+    return failure("Unable to print order.", 500);
   }
 }

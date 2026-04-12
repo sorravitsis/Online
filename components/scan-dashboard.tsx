@@ -39,6 +39,36 @@ function formatStoreLabel(store: StoreRow) {
   return store.name;
 }
 
+function checkQueueEligibility(order: OrderWithStore, queue: QueuedOrder[]): string | null {
+  if (order.awb_status === "printed") return "ALREADY PRINTED";
+  if (order.awb_status === "printing") return "LOCKED";
+  if (queue.some((q) => q.order.id === order.id)) return "ALREADY ADDED";
+  return null;
+}
+
+function applyBatchResults(
+  queue: QueuedOrder[],
+  results: { orderId: string; status: string; awbNumber?: string; error?: string }[]
+): QueuedOrder[] {
+  return queue.map((q) => {
+    const hit = results.find((r) => r.orderId === q.order.id);
+    if (!hit) return q;
+    if (hit.status === "printed") return { ...q, printStatus: "printed", awbNumber: hit.awbNumber };
+    if (hit.status === "queued") return { ...q, printStatus: "printer_queue", awbNumber: hit.awbNumber };
+    return { ...q, printStatus: "failed", error: hit.error };
+  });
+}
+
+function resolveSingleResultFromOrder(order: OrderWithStore): SingleResult | null {
+  if (order.awb_status === "printed") {
+    return { kind: "already_printed", order, awbNumber: order.awb_number ?? undefined };
+  }
+  if (order.awb_status === "printing") {
+    return { kind: "locked", order };
+  }
+  return null;
+}
+
 export function ScanDashboard({ stores }: ScanDashboardProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -211,20 +241,10 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         return;
       }
 
-      if (order.awb_status === "printed") {
-        setBarcode("ALREADY PRINTED");
+      const ineligible = checkQueueEligibility(order, queue);
+      if (ineligible) {
+        setBarcode(ineligible);
         setTimeout(() => setBarcode(""), 1500);
-        return;
-      }
-      if (order.awb_status === "printing") {
-        setBarcode("LOCKED");
-        setTimeout(() => setBarcode(""), 1500);
-        return;
-      }
-
-      if (queue.some((q) => q.order.id === order.id)) {
-        setBarcode("ALREADY ADDED");
-        setTimeout(() => setBarcode(""), 1000);
         return;
       }
 
@@ -281,15 +301,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       }
 
       const results = json.data?.results ?? [];
-      setQueue((prev) =>
-        prev.map((q) => {
-          const hit = results.find((r) => r.orderId === q.order.id);
-          if (!hit) return q;
-          if (hit.status === "printed") return { ...q, printStatus: "printed", awbNumber: hit.awbNumber };
-          if (hit.status === "queued") return { ...q, printStatus: "printer_queue", awbNumber: hit.awbNumber };
-          return { ...q, printStatus: "failed", error: hit.error };
-        })
-      );
+      setQueue((prev) => applyBatchResults(prev, results));
       setBulkDone(true);
     } catch (error) {
       setQueue((prev) =>
@@ -327,14 +339,9 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
 
       setActiveOrder(order);
 
-      if (order.awb_status === "printed") {
-        setSingleResult({ kind: "already_printed", order, awbNumber: order.awb_number ?? undefined });
-        setBarcode("");
-        return;
-      }
-
-      if (order.awb_status === "printing") {
-        setSingleResult({ kind: "locked", order });
+      const earlyResult = resolveSingleResultFromOrder(order);
+      if (earlyResult) {
+        setSingleResult(earlyResult);
         setBarcode("");
         return;
       }
