@@ -129,9 +129,7 @@ export async function GET(request: Request) {
       terminalRetentionCutoff
     });
   } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Unable to clean up locks.",
-      500
-    );
+    console.error("cleanup-locks error:", error);
+    return failure("Unable to clean up locks.", 500);
   }
 }

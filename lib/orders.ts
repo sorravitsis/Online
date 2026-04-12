@@ -113,6 +113,7 @@ export function isTerminalPlatformStatus(value: string | null | undefined) {
   return (TERMINAL_PLATFORM_STATUSES as readonly string[]).includes(normalized);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyWarehouseVisibilityFilter(query: any) {
   const hiddenStatuses = TERMINAL_PLATFORM_STATUSES.join(",");
   return query.not("platform_status", "in", `(${hiddenStatuses})`);

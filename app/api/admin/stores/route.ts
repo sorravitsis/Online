@@ -11,17 +11,16 @@ export async function GET() {
       .order("name", { ascending: true });
 
     if (error) {
-      return failure(error.message, 500);
+      console.error("stores GET error:", error);
+      return failure("Unable to load stores.", 500);
     }
 
     return success({
       stores: data ?? []
     });
   } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Unable to load stores.",
-      500
-    );
+    console.error("stores GET error:", error);
+    return failure("Unable to load stores.", 500);
   }
 }
 
@@ -74,19 +73,16 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return failure(
-        error.code === "PGRST116" ? "store_not_found" : error.message,
-        error.code === "PGRST116" ? 404 : 500
-      );
+      if (error.code === "PGRST116") return failure("store_not_found", 404);
+      console.error("stores PATCH error:", error);
+      return failure("Unable to update store.", 500);
     }
 
     return success({
       store: data
     });
   } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Unable to update store.",
-      500
-    );
+    console.error("stores PATCH error:", error);
+    return failure("Unable to update store.", 500);
   }
 }

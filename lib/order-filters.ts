@@ -48,7 +48,9 @@ export function normalizeOrderFilters(input: OrderFiltersInput = {}): OrderFilte
 
   return {
     status: input.status?.trim() || DEFAULT_STATUS,
-    platform: input.platform?.trim() as Platform | undefined,
+    platform: (input.platform?.trim() === "shopee" || input.platform?.trim() === "lazada")
+      ? input.platform.trim() as Platform
+      : undefined,
     storeId: input.storeId?.trim() || undefined,
     query: input.query?.trim() || undefined,
     dateFrom,

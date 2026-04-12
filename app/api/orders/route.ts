@@ -34,9 +34,7 @@ export async function GET(request: Request) {
 
     return success(data);
   } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Unable to load orders.",
-      500
-    );
+    console.error("orders GET error:", error);
+    return failure("Unable to load orders.", 500);
   }
 }
