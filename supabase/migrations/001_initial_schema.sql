@@ -81,11 +81,9 @@ CREATE TABLE app_config (
   value  text NOT NULL
 );
 
--- Insert default password hash for 'changeme'
--- IMPORTANT: change this immediately after first login
-INSERT INTO app_config (key, value) VALUES
-  ('admin_password_hash', 'REDACTED');
--- ^ bcrypt hash of 'changeme' — replace via Admin UI after setup
+-- Set admin password via Admin UI after first deploy.
+-- Run this manually in Supabase SQL editor (replace <hash> with output of bcrypt):
+--   INSERT INTO app_config (key, value) VALUES ('admin_password_hash', '<hash>');
 
 -- ─────────────────────────────────────────
 -- REALTIME (enable for order status updates)
