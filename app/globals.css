@@ -78,3 +78,24 @@ body {
 .order-row-flash {
   animation: row-flash 2s ease-out;
 }
+
+/* Bottom-docked filter inputs */
+.bottom-docked-input {
+  border: none;
+  border-bottom: 2px solid theme('colors.brand.ink.200');
+  background: transparent;
+  transition: border-color 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.bottom-docked-input:focus {
+  outline: none;
+  border-bottom-color: theme('colors.brand.red.700');
+  box-shadow: none;
+}
+
+/* Kinetic glass filter panel */
+.kinetic-glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}

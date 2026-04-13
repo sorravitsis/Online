@@ -51,15 +51,15 @@ function formatStoreLabel(store: StoreRow) {
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
-      return "bg-amber-100 text-amber-700";
+      return "bg-blue-50 text-blue-700";
     case "printing":
-      return "bg-blue-100 text-blue-700";
+      return "bg-brand-red-50 text-brand-red-700";
     case "printed":
-      return "bg-emerald-100 text-emerald-700";
+      return "bg-brand-ink-100 text-brand-ink-600";
     case "failed":
       return "bg-red-100 text-red-700";
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-brand-ink-100 text-brand-ink-500";
   }
 }
 
@@ -391,223 +391,262 @@ export function OrdersDashboard({
   }
 
   return (
-    <main className="min-h-screen px-6 py-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 glass-card-elevated rounded-3xl p-6 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="wordmark">
-                <span className="wordmark-badge">SiS</span>
-                <span className="wordmark-text">Warehouse</span>
-              </div>
-              <span
-                className={`badge ${
-                  realtimeEnabled
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-amber-50 text-amber-700"
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    realtimeEnabled ? "bg-emerald-500" : "bg-amber-500"
-                  }`}
-                />
-                {realtimeEnabled ? "Realtime" : "Polling"}
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-brand-ink-900">
-              AWB order queue
-            </h1>
-            <p className="text-sm text-brand-ink-500">
-              Search by order reference, narrow by platform or store, then
-              let live sync keep the queue current.
-            </p>
+    <div className="min-h-screen bg-[#F9F9FB]">
+
+      {/* ── Sticky Nav ── */}
+      <header className="bg-white flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 border-b border-brand-ink-100">
+        <div className="flex items-center gap-8">
+          <div className="wordmark">
+            <span className="wordmark-badge">SiS</span>
+            <span className="wordmark-text">Warehouse</span>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link href="/scan" className="btn-primary">
-              Scan Mode
-            </Link>
-            <Link href="/admin" className="btn-secondary">
-              Admin
-            </Link>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* Live sync badge */}
+          <div className="flex items-center gap-2 bg-brand-ink-50 px-3 py-1.5 rounded-lg border border-brand-ink-100">
+            <span className="relative flex h-2 w-2">
+              {realtimeEnabled && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-600 opacity-75" />
+              )}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${realtimeEnabled ? "bg-brand-red-600" : "bg-amber-500"}`} />
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-500">
+              {realtimeEnabled ? "Live Syncing" : "Polling 15s"}
+            </span>
           </div>
-        </header>
+          <Link
+            className="p-2 hover:bg-brand-ink-50 rounded-md transition-colors"
+            href="/admin"
+            title="Admin"
+          >
+            <svg className="w-5 h-5 text-brand-ink-500" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+              <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+          </Link>
+        </div>
+      </header>
 
-        <section className="glass-card rounded-3xl p-6">
-          <form className="grid gap-4 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto]" onSubmit={handleFilterSubmit}>
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Search order
-              <input
-                className="input-field"
-                ref={searchInputRef}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    query: event.target.value || undefined
-                  }))
-                }
-                placeholder="Order ID, barcode, AWB, buyer"
-                type="search"
-                value={draftFilters.query ?? ""}
-              />
-            </label>
+      <main className="relative">
+        <div className="max-w-[1600px] mx-auto px-8 py-10">
 
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Platform
-              <select
-                className="input-field"
-                onChange={(event) =>
-                  handlePlatformChange(
-                    event.target.value === "shopee" || event.target.value === "lazada"
-                      ? event.target.value
-                      : undefined
-                  )
-                }
-                value={draftFilters.platform ?? ""}
-              >
-                <option value="">All platforms</option>
-                <option value="shopee">Shopee</option>
-                <option value="lazada">Lazada</option>
-              </select>
-            </label>
-
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Status
-              <select
-                className="input-field"
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    status: event.target.value
-                  }))
-                }
-                value={draftFilters.status}
-              >
-                <option value="all">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="printing">Printing</option>
-                <option value="printed">Printed</option>
-                <option value="failed">Failed</option>
-              </select>
-            </label>
-
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              Store
-              <select
-                className="input-field"
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    storeId: event.target.value || undefined
-                  }))
-                }
-                value={draftFilters.storeId ?? ""}
-              >
-                <option value="">All stores</option>
-                {filteredStores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {formatStoreLabel(store)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              From
-              <input
-                className="input-field"
-                max={maxWorkDate}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    dateFrom: event.target.value,
-                    dateTo: current.dateTo < event.target.value ? event.target.value : current.dateTo
-                  }))
-                }
-                type="date"
-                value={draftFilters.dateFrom}
-              />
-            </label>
-
-            <label className="space-y-2 text-sm font-medium text-brand-ink-700">
-              To
-              <input
-                className="input-field"
-                max={maxWorkDate}
-                min={draftFilters.dateFrom}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    dateTo: event.target.value
-                  }))
-                }
-                type="date"
-                value={draftFilters.dateTo}
-              />
-            </label>
-
-            <div className="flex items-end justify-end gap-3">
-              <button
-                className="btn-primary"
-                disabled={isPending}
-                type="submit"
-              >
-                {isPending ? "Refreshing..." : "Apply filters"}
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  setDraftFilters(normalizeOrderFilters())
-                }
-                type="button"
-              >
-                Reset
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="glass-card rounded-3xl p-6">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {/* ── Hero Title ── */}
+          <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="text-lg font-semibold text-brand-ink-900">Orders</h2>
-              <p className="text-sm text-brand-ink-500">
-                {orders.length > 0
-                  ? `Showing ${(displayPage - 1) * DISPLAY_PAGE_SIZE + 1}–${Math.min(displayPage * DISPLAY_PAGE_SIZE, orders.length)} of ${orders.length} orders`
-                  : "No orders found"}
-                {total > orders.length ? ` (${total} total — refine filters to narrow)` : ""}
+              <span className="font-bold uppercase tracking-[0.2em] text-sm mb-2 block text-brand-red-700">
+                System Dashboard
+              </span>
+              <h1 className="text-5xl font-extrabold tracking-tight text-brand-ink-900">
+                Order Queue
+              </h1>
+            </div>
+            <div className="flex gap-4">
+              <Link
+                className="bg-brand-ink-100 text-brand-ink-900 font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-lg hover:bg-brand-ink-200 transition-all flex items-center gap-2"
+                href="/scan"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                  <path d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+                  <path d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75V16.5ZM16.5 6.75h.75v.75h-.75v-.75Z" />
+                </svg>
+                Scan Mode
+              </Link>
+              <Link
+                className="bg-gradient-to-br from-brand-red-700 to-brand-red-600 text-white font-bold uppercase tracking-wider text-xs px-8 py-3 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-brand-red-200/40"
+                href="/admin"
+              >
+                Admin
+              </Link>
+            </div>
+          </div>
+
+          {/* ── Filter Panel ── */}
+          <section className="kinetic-glass-panel rounded-xl p-8 mb-10 relative overflow-hidden shadow-sm">
+            <div className="absolute left-0 top-0 w-1 h-full bg-brand-red-700" />
+            <form
+              className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-8"
+              onSubmit={handleFilterSubmit}
+            >
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  Search Reference
+                </label>
+                <div className="relative">
+                  <input
+                    ref={searchInputRef}
+                    className="bottom-docked-input w-full py-2 pr-8 text-sm text-brand-ink-900 placeholder:text-brand-ink-300"
+                    onChange={(e) =>
+                      setDraftFilters((curr) => ({ ...curr, query: e.target.value || undefined }))
+                    }
+                    placeholder="Order ID / AWB / buyer..."
+                    type="search"
+                    value={draftFilters.query ?? ""}
+                  />
+                  <svg className="absolute right-0 top-2.5 w-4 h-4 text-brand-ink-300 pointer-events-none" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                    <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  Platform
+                </label>
+                <select
+                  className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  onChange={(e) =>
+                    handlePlatformChange(
+                      e.target.value === "shopee" || e.target.value === "lazada"
+                        ? e.target.value
+                        : undefined
+                    )
+                  }
+                  value={draftFilters.platform ?? ""}
+                >
+                  <option value="">All Platforms</option>
+                  <option value="shopee">Shopee</option>
+                  <option value="lazada">Lazada</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  Store
+                </label>
+                <select
+                  className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  onChange={(e) =>
+                    setDraftFilters((curr) => ({ ...curr, storeId: e.target.value || undefined }))
+                  }
+                  value={draftFilters.storeId ?? ""}
+                >
+                  <option value="">All Stores</option>
+                  {filteredStores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {formatStoreLabel(store)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  Status
+                </label>
+                <select
+                  className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  onChange={(e) =>
+                    setDraftFilters((curr) => ({ ...curr, status: e.target.value }))
+                  }
+                  value={draftFilters.status}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="printing">Printing</option>
+                  <option value="printed">Printed</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  From
+                </label>
+                <input
+                  className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900"
+                  max={maxWorkDate}
+                  onChange={(e) =>
+                    setDraftFilters((curr) => ({
+                      ...curr,
+                      dateFrom: e.target.value,
+                      dateTo: curr.dateTo < e.target.value ? e.target.value : curr.dateTo,
+                    }))
+                  }
+                  type="date"
+                  value={draftFilters.dateFrom}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                  To
+                </label>
+                <input
+                  className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900"
+                  max={maxWorkDate}
+                  min={draftFilters.dateFrom}
+                  onChange={(e) =>
+                    setDraftFilters((curr) => ({ ...curr, dateTo: e.target.value }))
+                  }
+                  type="date"
+                  value={draftFilters.dateTo}
+                />
+              </div>
+
+              <div className="flex items-end gap-2">
+                <button
+                  className="bg-brand-red-700 text-white flex-1 h-[42px] rounded-md font-bold text-xs uppercase tracking-widest hover:bg-brand-red-800 transition-all disabled:opacity-50"
+                  disabled={isPending}
+                  type="submit"
+                >
+                  {isPending ? "…" : "Apply"}
+                </button>
+                <button
+                  className="bg-brand-ink-50 text-brand-ink-500 h-[42px] px-3 rounded-md hover:bg-brand-ink-100 transition-all"
+                  onClick={() => setDraftFilters(normalizeOrderFilters())}
+                  title="Reset filters"
+                  type="button"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                    <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* ── Summary Bar ── */}
+          <div className="flex justify-between items-center mb-6 px-1">
+            <div className="flex gap-8">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold text-brand-red-700">{total}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Total Orders</span>
+              </div>
+              <div className="flex items-baseline gap-2 border-l border-brand-ink-200 pl-8">
+                <span className="text-3xl font-extrabold text-blue-600">
+                  {orders.filter((o) => o.awb_status === "pending").length}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Pending Action</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 mb-1">
+                {isPending || isSyncing ? "Syncing…" : "System Pulse"}
+              </p>
+              <p className="text-xs text-brand-ink-500 font-medium">
+                Last synced:{" "}
+                <span className="text-brand-ink-900">{lastSyncedAt.toLocaleTimeString()}</span>
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-brand-ink-400">
-              <span>
-                {isPending || isSyncing
-                  ? "Syncing latest orders..."
-                  : realtimeEnabled
-                    ? "Live queue ready"
-                    : "Auto-refresh every 15s"}
-              </span>
-              <span>{draftFilters.query ? "Debounced search active" : "Search ready"}</span>
-              <span>Last sync {lastSyncedAt.toLocaleTimeString()}</span>
-            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-brand-ink-100 text-sm">
+          {/* ── Orders Table ── */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-brand-ink-100/50">
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="text-left text-brand-ink-400">
-                  <th className="px-3 py-3 font-semibold">Order ID</th>
-                  <th className="px-3 py-3 font-semibold">Store</th>
-                  <th className="px-3 py-3 font-semibold">Buyer</th>
-                  <th className="px-3 py-3 font-semibold">Items</th>
-                  <th className="px-3 py-3 font-semibold">Status</th>
-                  <th className="px-3 py-3 font-semibold">Created</th>
+                <tr className="bg-brand-ink-50 border-b border-brand-ink-100">
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Order ID</th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Platform / Store</th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Buyer</th>
+                  <th className="text-center py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Items</th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Status</th>
+                  <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-ink-100">
+              <tbody className="divide-y divide-brand-ink-100/50">
                 {displayedOrders.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-8 text-center text-brand-ink-400" colSpan={6}>
+                    <td className="py-16 text-center text-brand-ink-400 text-sm" colSpan={6}>
                       No orders found for the selected filters.
                     </td>
                   </tr>
@@ -615,14 +654,17 @@ export function OrdersDashboard({
                   displayedOrders.map((order) => (
                     <tr
                       key={order.id}
-                      className={`align-top transition-colors hover:bg-brand-ink-50 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
+                      className={`group relative transition-colors hover:bg-brand-red-50/40 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
                     >
-                      <td className="px-3 py-4 font-medium text-brand-ink-900">
-                        <span className="inline-flex items-center gap-1.5">
-                          {order.platform_order_id}
+                      <td className="py-5 px-6">
+                        <div className="absolute left-0 top-0 w-1 h-full bg-brand-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-brand-ink-900 tracking-tight">
+                            {order.platform_order_id}
+                          </span>
                           <button
                             aria-label="Copy order ID"
-                            className="rounded p-0.5 text-brand-ink-300 transition hover:text-brand-ink-600"
+                            className="text-brand-ink-300 hover:text-brand-red-600 transition-colors"
                             type="button"
                             onClick={() => {
                               void navigator.clipboard.writeText(order.platform_order_id).then(() => {
@@ -632,74 +674,107 @@ export function OrdersDashboard({
                             }}
                           >
                             {copiedOrderId === order.id ? (
-                              <svg className="h-3.5 w-3.5 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                              <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                                 <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             ) : (
-                              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                 <rect height="13" rx="2" width="13" x="9" y="9" />
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" />
                               </svg>
                             )}
                           </button>
+                        </div>
+                      </td>
+                      <td className="py-5 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-xs text-brand-ink-900 capitalize">
+                            {order.store?.platform ?? "-"}
+                          </span>
+                          <span className="text-[11px] text-brand-ink-400">
+                            {order.store ? formatStoreLabel(order.store) : "Unknown store"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-5 px-6">
+                        <span className="text-sm font-medium text-brand-ink-700">
+                          {order.buyer_name ?? "-"}
                         </span>
                       </td>
-                      <td className="px-3 py-4 text-brand-ink-600">
-                        {order.store ? formatStoreLabel(order.store) : "Unknown store"}
+                      <td className="py-5 px-6 text-center">
+                        <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-ink-100 rounded-full font-bold text-[10px] text-brand-ink-700">
+                          {Array.isArray(order.items_json) ? order.items_json.length : 0}
+                        </span>
                       </td>
-                      <td className="px-3 py-4 text-brand-ink-600">
-                        {order.buyer_name ?? "-"}
-                      </td>
-                      <td className="px-3 py-4 text-brand-ink-600">
-                        {Array.isArray(order.items_json)
-                          ? order.items_json.length
-                          : 0}{" "}
-                        items
-                      </td>
-                      <td className="px-3 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${badgeClasses(order.awb_status)}`}
-                        >
+                      <td className="py-5 px-6">
+                        <span className={`inline-flex px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider ${badgeClasses(order.awb_status)}`}>
                           {formatOrderStatus(order.awb_status)}
                         </span>
                       </td>
-                      <td className="px-3 py-4 text-brand-ink-400">
-                        {new Date(order.created_at).toLocaleString()}
+                      <td className="py-5 px-6 text-right">
+                        <span className="text-[11px] text-brand-ink-400">
+                          {new Date(order.created_at).toLocaleString()}
+                        </span>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+
+            {/* Pagination */}
+            {totalDisplayPages > 1 && (
+              <div className="bg-brand-ink-50 px-8 py-4 flex justify-between items-center border-t border-brand-ink-100">
+                <span className="text-[11px] text-brand-ink-400 font-medium">
+                  Page {displayPage} of {totalDisplayPages} ({orders.length} orders)
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    className="px-4 py-2 bg-white border border-brand-ink-100 rounded font-bold text-[10px] uppercase tracking-widest text-brand-ink-500 hover:bg-brand-ink-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={displayPage <= 1}
+                    onClick={() => handleDisplayPageChange(displayPage - 1)}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-brand-red-700 text-white rounded font-bold text-[10px] uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={displayPage >= totalDisplayPages}
+                    onClick={() => handleDisplayPageChange(displayPage + 1)}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {totalDisplayPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-brand-ink-100 pt-4">
-              <p className="text-sm text-brand-ink-500">
-                Page {displayPage} of {totalDisplayPages}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={displayPage <= 1}
-                  onClick={() => handleDisplayPageChange(displayPage - 1)}
-                  type="button"
-                >
-                  Previous
-                </button>
-                <button
-                  className="inline-flex items-center justify-center rounded-full border border-brand-ink-200 bg-white px-4 py-2 text-sm font-medium text-brand-ink-900 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-ink-300 hover:bg-brand-ink-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={displayPage >= totalDisplayPages}
-                  onClick={() => handleDisplayPageChange(displayPage + 1)}
-                  type="button"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        </div>
+      </main>
+
+      {/* ── Footer ── */}
+      <footer className="bg-brand-ink-50 w-full px-8 py-6 flex justify-between items-center border-t border-brand-ink-100 mt-20">
+        <span className="text-xs font-medium uppercase tracking-widest text-brand-ink-300">
+          © 2026 SiS Warehouse Systems
+        </span>
+        <div className="flex gap-8">
+          <Link className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 hover:text-brand-red-700 transition-colors" href="/admin">
+            Admin
+          </Link>
+        </div>
+      </footer>
+
+      {/* ── Floating Status Chip ── */}
+      <div className="fixed top-20 right-8 z-40">
+        <div className="bg-white/70 backdrop-blur-xl px-4 py-2 rounded-full border border-brand-red-100 flex items-center gap-2 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-brand-red-700" />
+          <span className="font-bold text-[10px] uppercase tracking-[0.1em] text-brand-ink-700">
+            Server: Online
+          </span>
+        </div>
       </div>
-    </main>
+
+    </div>
   );
 }
