@@ -281,6 +281,19 @@ export function isExistingDocumentCreateError(message: string | undefined) {
   );
 }
 
+export function isShippingDocumentShouldPrintFirstError(message: string | undefined) {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("shipping_document_should_print_first") ||
+    normalized.includes("the package should print first") ||
+    normalized.includes("should print first")
+  );
+}
+
 function isRetryableDocumentNotReadyError(message: string | undefined) {
   if (!message) {
     return false;
@@ -389,11 +402,25 @@ async function waitForShopeeShippingDocumentResult(
         shopId
       }
     );
-    assertShopeeEnvelopeSuccess("get_shipping_document_result", resultResponse);
+
+    const envelopeFailure = getShopeeEnvelopeFailureMessage(resultResponse);
+    if (envelopeFailure) {
+      if (isShippingDocumentShouldPrintFirstError(envelopeFailure)) {
+        readyResponse = resultResponse;
+        break;
+      }
+
+      throw new Error(`get_shipping_document_result: ${envelopeFailure}`);
+    }
 
     const resultItem = getShopeeResultItem(resultResponse);
     const failureMessage = getShopeeResultFailureMessage(resultItem);
     if (failureMessage) {
+      if (isShippingDocumentShouldPrintFirstError(failureMessage)) {
+        readyResponse = resultResponse;
+        break;
+      }
+
       throw new Error(`get_shipping_document_result: ${failureMessage}`);
     }
 

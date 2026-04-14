@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   shopeeAdapter,
   isExistingDocumentCreateError,
+  isShippingDocumentShouldPrintFirstError,
   isShipOrderSelectionError,
   parseShopeeRefreshTokenResponse,
   selectShopeePackageNumber,
@@ -164,6 +165,16 @@ async function run() {
   }
 
   {
+    assert.equal(
+      isShippingDocumentShouldPrintFirstError(
+        "logistics.shipping_document_should_print_first: The package should print first."
+      ),
+      true
+    );
+    assert.equal(isShippingDocumentShouldPrintFirstError("document_type_not_available"), false);
+  }
+
+  {
     process.env.SHOPEE_APP_ID = "123456";
     process.env.SHOPEE_APP_KEY = "test-secret";
     process.env.SHOPEE_API_BASE = "https://partner.test-shopee.local";
@@ -279,6 +290,125 @@ async function run() {
       assert.equal(Buffer.isBuffer(result.pdf), true);
       assert.equal(
         fetchCalls.some((href) => href.includes("/api/v2/logistics/get_shipping_document_result")),
+        true
+      );
+    } finally {
+      global.fetch = originalFetch;
+    }
+  }
+
+  {
+    process.env.SHOPEE_APP_ID = "123456";
+    process.env.SHOPEE_APP_KEY = "test-secret";
+    process.env.SHOPEE_API_BASE = "https://partner.test-shopee.local";
+
+    const orderId = "260413PSUU4SXU";
+    const originalFetch = global.fetch;
+    const fetchCalls = [];
+
+    global.fetch = async (url) => {
+      const href = typeof url === "string" ? url : url.toString();
+      fetchCalls.push(href);
+
+      if (href.includes("/api/v2/logistics/get_tracking_number")) {
+        return new Response("not found", { status: 404 });
+      }
+
+      if (href.includes("/api/v2/logistics/init")) {
+        return new Response(JSON.stringify({ response: {} }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+
+      if (href.includes("/api/v2/logistics/get_shipping_document_parameter")) {
+        return new Response(
+          JSON.stringify({
+            response: {
+              result_list: [
+                {
+                  order_sn: orderId,
+                  suggest_shipping_document_type: "NORMAL_AIR_WAYBILL",
+                  package_number: "PKG-1"
+                }
+              ]
+            }
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" }
+          }
+        );
+      }
+
+      if (href.includes("/api/v2/logistics/create_shipping_document")) {
+        return new Response(
+          JSON.stringify({
+            response: {
+              result_list: [
+                {
+                  order_sn: orderId
+                }
+              ]
+            }
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" }
+          }
+        );
+      }
+
+      if (href.includes("/api/v2/logistics/get_shipping_document_result")) {
+        return new Response(
+          JSON.stringify({
+            error: "logistics.shipping_document_should_print_first",
+            message: "The package should print first.",
+            response: {
+              result_list: [
+                {
+                  order_sn: orderId,
+                  fail_message: "The package should print first."
+                }
+              ]
+            }
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" }
+          }
+        );
+      }
+
+      if (href.includes("/api/v2/logistics/download_shipping_document")) {
+        return new Response(Buffer.from("%PDF-1.4 test"), {
+          status: 200,
+          headers: { "content-type": "application/pdf" }
+        });
+      }
+
+      throw new Error(`Unexpected fetch URL in Shopee should-print-first test: ${href}`);
+    };
+
+    try {
+      const result = await shopeeAdapter.generateAWB({
+        platform_order_id: orderId,
+        store: {
+          platform: "shopee",
+          shop_id: "987654321",
+          access_token: "access-token",
+          refresh_token: "refresh-token",
+          token_expiry: new Date(Date.now() + 60_000).toISOString()
+        }
+      });
+
+      assert.equal(Buffer.isBuffer(result.pdf), true);
+      assert.equal(
+        fetchCalls.some((href) => href.includes("/api/v2/logistics/get_shipping_document_result")),
+        true
+      );
+      assert.equal(
+        fetchCalls.some((href) => href.includes("/api/v2/logistics/download_shipping_document")),
         true
       );
     } finally {
