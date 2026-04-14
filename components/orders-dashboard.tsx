@@ -387,6 +387,17 @@ export function OrdersDashboard({
     setDisplayPage(Math.max(1, Math.min(next, totalDisplayPages)));
   }
 
+  function handleCopyOrderId(orderId: string, rowId: string) {
+    void navigator.clipboard.writeText(orderId).then(() => {
+      setCopiedOrderId(rowId);
+      setTimeout(() => setCopiedOrderId(null), 1500);
+    });
+  }
+
+  function maxDate(a: string, b: string): string {
+    return a >= b ? a : b;
+  }
+
   function handlePlatformChange(platform: Platform | undefined) {
     setDraftFilters((current) => {
       const nextStoreId =
@@ -430,7 +441,7 @@ export function OrdersDashboard({
           <Link
             className="p-2 hover:bg-brand-ink-50 rounded-md transition-colors"
             href="/admin"
-            title="Admin"
+            title="Admin settings"
           >
             <svg
               className="w-5 h-5 text-brand-ink-500"
@@ -445,6 +456,20 @@ export function OrdersDashboard({
               <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
           </Link>
+          <button
+            className="p-2 hover:bg-red-50 hover:text-brand-red-600 rounded-md transition-colors text-brand-ink-400"
+            title="Sign out"
+            type="button"
+            onClick={() => {
+              void fetch("/api/auth/logout", { method: "POST" }).then(() => {
+                router.replace("/login");
+              });
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -496,13 +521,14 @@ export function OrdersDashboard({
               onSubmit={handleFilterSubmit}
             >
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-search">
                   Search Reference
                 </label>
                 <div className="relative">
                   <input
                     ref={searchInputRef}
                     className="bottom-docked-input w-full py-2 pr-8 text-sm text-brand-ink-900 placeholder:text-brand-ink-300"
+                    id="filter-search"
                     onChange={(e) =>
                       setDraftFilters((curr) => ({
                         ...curr,
@@ -528,11 +554,12 @@ export function OrdersDashboard({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-platform">
                   Platform
                 </label>
                 <select
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  id="filter-platform"
                   onChange={(e) =>
                     handlePlatformChange(
                       e.target.value === "shopee" || e.target.value === "lazada"
@@ -549,11 +576,12 @@ export function OrdersDashboard({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-store">
                   Store
                 </label>
                 <select
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  id="filter-store"
                   onChange={(e) =>
                     setDraftFilters((curr) => ({
                       ...curr,
@@ -572,11 +600,12 @@ export function OrdersDashboard({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-status">
                   Status
                 </label>
                 <select
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
+                  id="filter-status"
                   onChange={(e) =>
                     setDraftFilters((curr) => ({
                       ...curr,
@@ -594,20 +623,18 @@ export function OrdersDashboard({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-date-from">
                   From
                 </label>
                 <input
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900"
+                  id="filter-date-from"
                   max={maxWorkDate}
                   onChange={(e) =>
                     setDraftFilters((curr) => ({
                       ...curr,
                       dateFrom: e.target.value,
-                      dateTo:
-                        curr.dateTo < e.target.value
-                          ? e.target.value
-                          : curr.dateTo,
+                      dateTo: maxDate(curr.dateTo, e.target.value),
                     }))
                   }
                   type="date"
@@ -616,11 +643,12 @@ export function OrdersDashboard({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-ink-400" htmlFor="filter-date-to">
                   To
                 </label>
                 <input
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900"
+                  id="filter-date-to"
                   max={maxWorkDate}
                   min={draftFilters.dateFrom}
                   onChange={(e) =>
@@ -748,17 +776,7 @@ export function OrdersDashboard({
                             aria-label="Copy order ID"
                             className="text-brand-ink-300 hover:text-brand-red-600 transition-colors"
                             type="button"
-                            onClick={() => {
-                              void navigator.clipboard
-                                .writeText(order.platform_order_id)
-                                .then(() => {
-                                  setCopiedOrderId(order.id);
-                                  setTimeout(
-                                    () => setCopiedOrderId(null),
-                                    1500,
-                                  );
-                                });
-                            }}
+                            onClick={() => handleCopyOrderId(order.platform_order_id, order.id)}
                           >
                             {copiedOrderId === order.id ? (
                               <svg
