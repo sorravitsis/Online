@@ -48,6 +48,10 @@ function formatStoreLabel(store: StoreRow) {
   return store.name;
 }
 
+function maxDate(a: string, b: string): string {
+  return a >= b ? a : b;
+}
+
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
@@ -392,10 +396,6 @@ export function OrdersDashboard({
       setCopiedOrderId(rowId);
       setTimeout(() => setCopiedOrderId(null), 1500);
     });
-  }
-
-  function maxDate(a: string, b: string): string {
-    return a >= b ? a : b;
   }
 
   function handlePlatformChange(platform: Platform | undefined) {
