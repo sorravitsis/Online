@@ -60,7 +60,7 @@ export function LoginForm() {
       {/* Password field */}
       <div className="space-y-3">
         <label
-          className="block text-[10px] font-black uppercase tracking-widest text-brand-ink-400"
+          className="block text-[10px] font-black uppercase tracking-widest text-brand-ink-400 dark:text-white/50"
           htmlFor="password"
         >
           Password
@@ -68,7 +68,7 @@ export function LoginForm() {
         <div className="relative">
           <input
             autoComplete="current-password"
-            className="w-full bg-brand-ink-50 border-none rounded-xl px-6 py-5 text-xl tracking-[0.4em] text-brand-ink-900 placeholder:text-brand-ink-200 placeholder:tracking-widest outline-none focus:ring-2 focus:ring-brand-red-100 transition-all duration-150"
+            className="w-full bg-brand-ink-50 dark:bg-white/[0.06] border-none rounded-xl px-6 py-5 text-xl tracking-[0.4em] text-brand-ink-900 dark:text-white placeholder:text-brand-ink-200 dark:placeholder:text-white/20 placeholder:tracking-widest outline-none focus:ring-2 focus:ring-brand-red-100 dark:focus:ring-brand-red-900/40 transition-all duration-150"
             id="password"
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"

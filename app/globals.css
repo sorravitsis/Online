@@ -11,6 +11,14 @@
   --radius: 1rem;
 }
 
+.dark {
+  color-scheme: dark;
+  --background: #111113;
+  --foreground: #f1f5f9;
+  --card: rgba(30, 30, 34, 0.97);
+  --border: rgba(255, 255, 255, 0.08);
+}
+
 body {
   min-height: 100vh;
   background:
@@ -22,6 +30,13 @@ body {
   color: var(--foreground);
 }
 
+.dark body {
+  background:
+    radial-gradient(ellipse 70% 45% at 5% -5%, rgba(180, 0, 20, 0.12), transparent),
+    radial-gradient(ellipse 50% 35% at 95% 108%, rgba(180, 0, 20, 0.08), transparent),
+    linear-gradient(160deg, #111113 0%, #18181c 100%);
+}
+
 * {
   border-color: var(--border);
 }
@@ -29,11 +44,11 @@ body {
 /* Enterprise glass card layer */
 @layer components {
   .glass-card {
-    @apply bg-white/[0.97] backdrop-blur-xl border border-white/70 shadow-card;
+    @apply bg-white/[0.97] dark:bg-white/[0.04] backdrop-blur-xl border border-white/70 dark:border-white/10 shadow-card;
   }
 
   .glass-card-elevated {
-    @apply bg-white backdrop-blur-xl border border-brand-red-100/50 shadow-elevated;
+    @apply bg-white dark:bg-[#1a1a1e] backdrop-blur-xl border border-brand-red-100/50 dark:border-white/10 shadow-elevated;
   }
 
   .btn-primary {
@@ -49,7 +64,7 @@ body {
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-brand-ink-200 bg-white px-4 py-3 text-sm text-brand-ink-900 shadow-inner-glow outline-none transition-all duration-150 placeholder:text-brand-ink-400 focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100;
+    @apply w-full rounded-xl border border-brand-ink-200 dark:border-white/10 bg-white dark:bg-white/[0.06] px-4 py-3 text-sm text-brand-ink-900 dark:text-white shadow-inner-glow outline-none transition-all duration-150 placeholder:text-brand-ink-400 dark:placeholder:text-white/30 focus:border-brand-red-300 focus:ring-2 focus:ring-brand-red-100 dark:focus:ring-brand-red-900/40;
   }
 
   .section-label {
@@ -65,7 +80,7 @@ body {
   }
 
   .wordmark-text {
-    @apply text-2xl font-bold tracking-tight text-brand-ink-900;
+    @apply text-2xl font-bold tracking-tight text-brand-ink-900 dark:text-white;
   }
 }
 
@@ -84,12 +99,26 @@ body {
   border: none;
   border-bottom: 2px solid theme('colors.brand.ink.200');
   background: transparent;
+  color: theme('colors.brand.ink.900');
   transition: border-color 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.dark .bottom-docked-input {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+}
+.bottom-docked-input::placeholder {
+  color: theme('colors.brand.ink.400');
+}
+.dark .bottom-docked-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 .bottom-docked-input:focus {
   outline: none;
   border-bottom-color: theme('colors.brand.red.700');
   box-shadow: none;
+}
+.dark .bottom-docked-input:focus {
+  border-bottom-color: theme('colors.brand.red.500');
 }
 
 /* Kinetic glass filter panel */
@@ -98,4 +127,8 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.45);
+}
+.dark .kinetic-glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
 }

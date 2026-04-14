@@ -25,6 +25,7 @@ const borderRadius = extractValues(t.borderRadius);
 const shadows = extractValues(t.shadows);
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",

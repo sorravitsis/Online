@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { tryCreateBrowserClient } from "@/lib/supabase";
 import {
   buildOrderSearchParams,
@@ -414,9 +415,9 @@ export function OrdersDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9FB]">
+    <div className="min-h-screen bg-[#F9F9FB] dark:bg-[#111113]">
       {/* ── Sticky Nav ── */}
-      <header className="bg-white flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 border-b border-brand-ink-100">
+      <header className="bg-white dark:bg-[#111113] flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 border-b border-brand-ink-100 dark:border-white/10">
         <div className="flex items-center gap-8">
           <div className="wordmark">
             <span className="wordmark-badge text-[18px]">SiS</span>
@@ -424,8 +425,9 @@ export function OrdersDashboard({
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           {/* Live sync badge */}
-          <div className="flex items-center gap-2 bg-brand-ink-50 px-3 py-1.5 rounded-lg border border-brand-ink-100">
+          <div className="flex items-center gap-2 bg-brand-ink-50 dark:bg-white/[0.06] px-3 py-1.5 rounded-lg border border-brand-ink-100 dark:border-white/10">
             <span className="relative flex h-2 w-2">
               {realtimeEnabled && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-600 opacity-75" />
@@ -434,17 +436,17 @@ export function OrdersDashboard({
                 className={`relative inline-flex rounded-full h-2 w-2 ${realtimeEnabled ? "bg-brand-red-600" : "bg-amber-500"}`}
               />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-500">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-500 dark:text-white/50">
               {realtimeEnabled ? "Live Syncing" : "Polling 15s"}
             </span>
           </div>
           <Link
-            className="p-2 hover:bg-brand-ink-50 rounded-md transition-colors"
+            className="p-2 hover:bg-brand-ink-50 dark:hover:bg-white/10 rounded-md transition-colors"
             href="/admin"
             title="Admin settings"
           >
             <svg
-              className="w-5 h-5 text-brand-ink-500"
+              className="w-5 h-5 text-brand-ink-500 dark:text-white/50"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -457,7 +459,7 @@ export function OrdersDashboard({
             </svg>
           </Link>
           <button
-            className="p-2 hover:bg-red-50 hover:text-brand-red-600 rounded-md transition-colors text-brand-ink-400"
+            className="p-2 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-brand-red-600 rounded-md transition-colors text-brand-ink-400 dark:text-white/40"
             title="Sign out"
             type="button"
             onClick={() => {
@@ -481,13 +483,13 @@ export function OrdersDashboard({
               <span className="font-bold uppercase tracking-[0.2em] text-sm mb-2 block text-brand-red-700">
                 System Dashboard
               </span>
-              <h1 className="text-5xl font-extrabold tracking-tight text-brand-ink-900">
+              <h1 className="text-5xl font-extrabold tracking-tight text-brand-ink-900 dark:text-white">
                 Order Queue
               </h1>
             </div>
             <div className="flex gap-4">
               <Link
-                className="bg-brand-ink-100 text-brand-ink-900 font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-lg hover:bg-brand-ink-200 transition-all flex items-center gap-2"
+                className="bg-brand-ink-100 dark:bg-white/[0.08] text-brand-ink-900 dark:text-white font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-lg hover:bg-brand-ink-200 dark:hover:bg-white/[0.14] transition-all flex items-center gap-2"
                 href="/scan"
               >
                 <svg
@@ -671,7 +673,7 @@ export function OrdersDashboard({
                   {isPending ? "…" : "Apply"}
                 </button>
                 <button
-                  className="bg-brand-ink-50 text-brand-ink-500 h-[42px] px-3 rounded-md hover:bg-brand-ink-100 transition-all"
+                  className="bg-brand-ink-50 dark:bg-white/[0.06] text-brand-ink-500 dark:text-white/50 h-[42px] px-3 rounded-md hover:bg-brand-ink-100 dark:hover:bg-white/[0.12] transition-all"
                   onClick={() => setDraftFilters(normalizeOrderFilters())}
                   title="Reset filters"
                   type="button"
@@ -699,26 +701,26 @@ export function OrdersDashboard({
                 <span className="text-3xl font-extrabold text-brand-red-700">
                   {total}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                   Total Orders
                 </span>
               </div>
-              <div className="flex items-baseline gap-2 border-l border-brand-ink-200 pl-8">
+              <div className="flex items-baseline gap-2 border-l border-brand-ink-200 dark:border-white/10 pl-8">
                 <span className="text-3xl font-extrabold text-blue-600">
                   {orders.filter((o) => o.awb_status === "pending").length}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                   Pending Action
                 </span>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 mb-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40 mb-1">
                 {isPending || isSyncing ? "Syncing…" : "System Pulse"}
               </p>
-              <p className="text-xs text-brand-ink-500 font-medium">
+              <p className="text-xs text-brand-ink-500 dark:text-white/40 font-medium">
                 Last synced:{" "}
-                <span className="text-brand-ink-900" suppressHydrationWarning>
+                <span className="text-brand-ink-900 dark:text-white/70" suppressHydrationWarning>
                   {lastSyncedAt.toLocaleTimeString()}
                 </span>
               </p>
@@ -726,35 +728,35 @@ export function OrdersDashboard({
           </div>
 
           {/* ── Orders Table ── */}
-          <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-brand-ink-100/50">
+          <div className="bg-white dark:bg-[#1a1a1e] rounded-xl overflow-hidden shadow-sm border border-brand-ink-100/50 dark:border-white/[0.06]">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-brand-ink-50 border-b border-brand-ink-100">
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                <tr className="bg-brand-ink-50 dark:bg-white/[0.04] border-b border-brand-ink-100 dark:border-white/[0.06]">
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Order ID
                   </th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Platform / Store
                   </th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Buyer
                   </th>
-                  <th className="text-center py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  <th className="text-center py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Items
                   </th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Status
                   </th>
-                  <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Created
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-ink-100/50">
+              <tbody className="divide-y divide-brand-ink-100/50 dark:divide-white/[0.06]">
                 {displayedOrders.length === 0 ? (
                   <tr>
                     <td
-                      className="py-16 text-center text-brand-ink-400 text-sm"
+                      className="py-16 text-center text-brand-ink-400 dark:text-white/30 text-sm"
                       colSpan={6}
                     >
                       No orders found for the selected filters.
@@ -764,12 +766,12 @@ export function OrdersDashboard({
                   displayedOrders.map((order) => (
                     <tr
                       key={order.id}
-                      className={`group relative transition-colors hover:bg-brand-red-50/40 ${flashOrderId === order.id ? "order-row-flash" : ""}`}
+                      className={`group relative transition-colors hover:bg-brand-red-50/40 dark:hover:bg-white/[0.04] ${flashOrderId === order.id ? "order-row-flash" : ""}`}
                     >
                       <td className="py-5 px-6">
                         <div className="absolute left-0 top-0 w-1 h-full bg-brand-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-brand-ink-900 tracking-tight">
+                          <span className="font-bold text-sm text-brand-ink-900 dark:text-white tracking-tight">
                             {order.platform_order_id}
                           </span>
                           <button
@@ -818,10 +820,10 @@ export function OrdersDashboard({
                       </td>
                       <td className="py-5 px-6">
                         <div className="flex flex-col">
-                          <span className="font-bold text-xs text-brand-ink-900 capitalize">
+                          <span className="font-bold text-xs text-brand-ink-900 dark:text-white capitalize">
                             {order.store?.platform ?? "-"}
                           </span>
-                          <span className="text-[11px] text-brand-ink-400">
+                          <span className="text-[11px] text-brand-ink-400 dark:text-white/40">
                             {order.store
                               ? formatStoreLabel(order.store)
                               : "Unknown store"}
@@ -829,12 +831,12 @@ export function OrdersDashboard({
                         </div>
                       </td>
                       <td className="py-5 px-6">
-                        <span className="text-sm font-medium text-brand-ink-700">
+                        <span className="text-sm font-medium text-brand-ink-700 dark:text-white/80">
                           {order.buyer_name ?? "-"}
                         </span>
                       </td>
                       <td className="py-5 px-6 text-center">
-                        <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-ink-100 rounded-full font-bold text-[10px] text-brand-ink-700">
+                        <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-ink-100 dark:bg-white/[0.08] rounded-full font-bold text-[10px] text-brand-ink-700 dark:text-white/70">
                           {Array.isArray(order.items_json)
                             ? order.items_json.length
                             : 0}
@@ -848,7 +850,7 @@ export function OrdersDashboard({
                         </span>
                       </td>
                       <td className="py-5 px-6 text-right">
-                        <span className="text-[11px] text-brand-ink-400" suppressHydrationWarning>
+                        <span className="text-[11px] text-brand-ink-400 dark:text-white/30" suppressHydrationWarning>
                           {new Date(order.created_at).toLocaleString()}
                         </span>
                       </td>
@@ -860,14 +862,14 @@ export function OrdersDashboard({
 
             {/* Pagination */}
             {totalDisplayPages > 1 && (
-              <div className="bg-brand-ink-50 px-8 py-4 flex justify-between items-center border-t border-brand-ink-100">
-                <span className="text-[11px] text-brand-ink-400 font-medium">
+              <div className="bg-brand-ink-50 dark:bg-white/[0.03] px-8 py-4 flex justify-between items-center border-t border-brand-ink-100 dark:border-white/[0.06]">
+                <span className="text-[11px] text-brand-ink-400 dark:text-white/40 font-medium">
                   Page {displayPage} of {totalDisplayPages} ({orders.length}{" "}
                   orders)
                 </span>
                 <div className="flex gap-2">
                   <button
-                    className="px-4 py-2 bg-white border border-brand-ink-100 rounded font-bold text-[10px] uppercase tracking-widest text-brand-ink-500 hover:bg-brand-ink-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-white dark:bg-white/[0.06] border border-brand-ink-100 dark:border-white/[0.08] rounded font-bold text-[10px] uppercase tracking-widest text-brand-ink-500 dark:text-white/50 hover:bg-brand-ink-50 dark:hover:bg-white/[0.10] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     disabled={displayPage <= 1}
                     onClick={() => handleDisplayPageChange(displayPage - 1)}
                     type="button"
@@ -891,7 +893,7 @@ export function OrdersDashboard({
 
       {/* ── Logitech Product Strip ── */}
       <section className="w-full px-8 py-8 mt-12">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 mb-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 dark:text-white/20 mb-4">
           Powered by Logitech
         </p>
         <div className="grid grid-cols-4 gap-4">
@@ -903,14 +905,14 @@ export function OrdersDashboard({
           ].map(({ src, label }) => (
             <div
               key={src}
-              className="rounded-2xl overflow-hidden bg-brand-ink-50 border border-brand-ink-100 flex flex-col items-center p-4 gap-3"
+              className="rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] flex flex-col items-center p-4 gap-3"
             >
               <img
                 alt={label}
-                className="w-full h-36 object-contain"
+                className="w-full h-36 object-contain dark:opacity-70"
                 src={src}
               />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/30">
                 {label}
               </span>
             </div>
@@ -919,13 +921,13 @@ export function OrdersDashboard({
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-brand-ink-50 w-full px-8 py-6 flex justify-between items-center border-t border-brand-ink-100 mt-8">
-        <span className="text-xs font-medium uppercase tracking-widest text-brand-ink-300">
+      <footer className="bg-brand-ink-50 dark:bg-[#0d0d0f] w-full px-8 py-6 flex justify-between items-center border-t border-brand-ink-100 dark:border-white/[0.06] mt-8">
+        <span className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 dark:text-white/20">
           © 2026 SiS Warehouse Systems
         </span>
         <div className="flex gap-8">
           <Link
-            className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 hover:text-brand-red-700 transition-colors"
+            className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 dark:text-white/20 hover:text-brand-red-700 transition-colors"
             href="/admin"
           >
             Admin
@@ -935,9 +937,9 @@ export function OrdersDashboard({
 
       {/* ── Floating Status Chip ── */}
       <div className="fixed top-20 right-8 z-40">
-        <div className="bg-white/70 backdrop-blur-xl px-4 py-2 rounded-full border border-brand-red-100 flex items-center gap-2 shadow-lg">
+        <div className="bg-white/70 dark:bg-black/50 backdrop-blur-xl px-4 py-2 rounded-full border border-brand-red-100 dark:border-white/10 flex items-center gap-2 shadow-lg">
           <span className="w-2 h-2 rounded-full bg-brand-red-700" />
-          <span className="font-bold text-[10px] uppercase tracking-[0.1em] text-brand-ink-700">
+          <span className="font-bold text-[10px] uppercase tracking-[0.1em] text-brand-ink-700 dark:text-white/70">
             Server: Online
           </span>
         </div>

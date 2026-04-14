@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { readJsonResponse } from "@/lib/http";
 import { extractOrderItems, mapScanError, mapScanSuccess } from "@/lib/scan";
 import type { OrderWithStore, StoreRow } from "@/lib/types";
@@ -391,9 +392,12 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-brand-ink-900">Scan to print</h1>
           </div>
-          <Link href="/" className="btn-secondary !px-4 !py-2 text-xs">
-            Back
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/" className="btn-secondary !px-4 !py-2 text-xs">
+              Back
+            </Link>
+          </div>
         </div>
 
         {/* Mode toggle */}

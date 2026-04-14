@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { mapAdminError } from "@/lib/admin";
 import type { Platform, StoreRow } from "@/lib/types";
 
@@ -454,7 +455,8 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
+              <ThemeToggle />
               <Link
                 className="rounded-full bg-brand-red px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700"
                 href="/"
