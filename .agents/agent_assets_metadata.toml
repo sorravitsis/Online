@@ -24,3 +24,15 @@ id = "o4rKeYmtc-nJjdR1GGHlI"
 uri = "file://attached_assets/logitech_headset.png"
 type = "image"
 title = "logitech headset"
+
+[[generated]]
+id = "kv_Eomdo7Is8R1krPVaMn"
+uri = "file://attached_assets/asus_notebook.png"
+type = "image"
+title = "asus notebook laptop"
+
+[[generated]]
+id = "5VFkZo5ex4uwzxDOdi_Jf"
+uri = "file://attached_assets/xiaomi_devices.png"
+type = "image"
+title = "xiaomi smart devices"
