@@ -871,8 +871,37 @@ export function OrdersDashboard({
         </div>
       </main>
 
+      {/* ── Logitech Product Strip ── */}
+      <section className="w-full px-8 py-8 mt-12">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 mb-4">
+          Powered by Logitech
+        </p>
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { src: "/logitech_keyboard.png", label: "MX Keys S" },
+            { src: "/logitech_mouse.png",    label: "MX Master 3S" },
+            { src: "/logitech_webcam.png",   label: "BRIO Webcam" },
+            { src: "/logitech_headset.png",  label: "G Pro Headset" },
+          ].map(({ src, label }) => (
+            <div
+              key={src}
+              className="rounded-2xl overflow-hidden bg-brand-ink-50 border border-brand-ink-100 flex flex-col items-center p-4 gap-3"
+            >
+              <img
+                alt={label}
+                className="w-full h-36 object-contain"
+                src={src}
+              />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── Footer ── */}
-      <footer className="bg-brand-ink-50 w-full px-8 py-6 flex justify-between items-center border-t border-brand-ink-100 mt-20">
+      <footer className="bg-brand-ink-50 w-full px-8 py-6 flex justify-between items-center border-t border-brand-ink-100 mt-8">
         <span className="text-xs font-medium uppercase tracking-widest text-brand-ink-300">
           © 2026 SiS Warehouse Systems
         </span>
