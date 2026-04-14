@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "oEjcnO2vIG59bsdg6Yfls"
+uri = "file://attached_assets/logitech_mouse.png"
+type = "image"
+title = "logitech mx master mouse"
+
+[[generated]]
+id = "yraOyJnKMWNWlC0WWEw8p"
+uri = "file://attached_assets/logitech_keyboard.png"
+type = "image"
+title = "logitech mx keys keyboard"
+
+[[generated]]
+id = "9GnFdadttw0K91b-aYcjs"
+uri = "file://attached_assets/logitech_webcam.png"
+type = "image"
+title = "logitech brio webcam"
+
+[[generated]]
+id = "o4rKeYmtc-nJjdR1GGHlI"
+uri = "file://attached_assets/logitech_headset.png"
+type = "image"
+title = "logitech headset"
