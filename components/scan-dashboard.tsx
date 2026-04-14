@@ -371,7 +371,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <div className="wordmark">
-              <span className="wordmark-badge">SiS</span>
+              <span className="wordmark-badge text-[18px]">SiS</span>
               <span className="wordmark-text">Warehouse</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-brand-ink-900">Scan to print</h1>

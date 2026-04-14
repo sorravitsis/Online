@@ -8,7 +8,7 @@ export default function LoginPage() {
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-brand-ink-100 flex justify-between items-center px-8 md:px-12 py-5">
         <div className="wordmark">
-          <span className="wordmark-badge">SiS</span>
+          <span className="wordmark-badge text-[18px]">SiS</span>
           <span className="wordmark-text">Warehouse</span>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
