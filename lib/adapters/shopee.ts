@@ -661,7 +661,7 @@ async function fetchShopeeShippingDocument(
           if (createFailure) {
             if (trackingNumber && isExistingDocumentCreateError(createFailure)) {
               createFailedBecauseDocumentAlreadyExists = true;
-            } else {
+            } else if (!isRetryableDocumentNotReadyError(createFailure)) {
               throw new Error(`create_shipping_document: ${createFailure}`);
             }
           }
