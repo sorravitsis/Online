@@ -8,7 +8,7 @@ import {
   buildOrderSearchParams,
   getDefaultOrderDate,
   normalizeOrderFilters,
-  type OrderFilters
+  type OrderFilters,
 } from "@/lib/order-filters";
 import { formatOrderStatus } from "@/lib/format";
 import type { OrderWithStore, Platform, StoreRow } from "@/lib/types";
@@ -69,7 +69,7 @@ export function OrdersDashboard({
   initialPage,
   pageSize,
   stores,
-  filters
+  filters,
 }: OrdersDashboardProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -86,7 +86,9 @@ export function OrdersDashboard({
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const storeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const storeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRequestRef = useRef(0);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -98,7 +100,9 @@ export function OrdersDashboard({
       return availableStores;
     }
 
-    return availableStores.filter((store) => store.platform === draftFilters.platform);
+    return availableStores.filter(
+      (store) => store.platform === draftFilters.platform,
+    );
   }, [availableStores, draftFilters.platform]);
 
   const storePlatformById = useMemo(() => {
@@ -139,7 +143,7 @@ export function OrdersDashboard({
       restoreSearchFocusRef.current = true;
       navigate({
         ...draftFilters,
-        page: 1
+        page: 1,
       });
     }, SEARCH_DEBOUNCE_MS);
 
@@ -177,7 +181,7 @@ export function OrdersDashboard({
       try {
         const search = buildOrderSearchParams(filters).toString();
         const response = await fetch(`/api/orders?${search}`, {
-          cache: "no-store"
+          cache: "no-store",
         });
         const json = (await response.json()) as OrdersApiResponse;
 
@@ -196,7 +200,7 @@ export function OrdersDashboard({
         const highlightedId =
           changedId && json.data.orders.some((order) => order.id === changedId)
             ? changedId
-            : json.data.orders[0]?.id ?? null;
+            : (json.data.orders[0]?.id ?? null);
 
         flashRow(highlightedId);
       } catch (error) {
@@ -211,7 +215,7 @@ export function OrdersDashboard({
     async function refreshStores() {
       try {
         const response = await fetch("/api/admin/stores", {
-          cache: "no-store"
+          cache: "no-store",
         });
         const json = (await response.json()) as StoresApiResponse;
 
@@ -271,7 +275,7 @@ export function OrdersDashboard({
           {
             event: "*",
             schema: "public",
-            table: "orders"
+            table: "orders",
           },
           (payload) => {
             const record =
@@ -279,29 +283,29 @@ export function OrdersDashboard({
               (payload.old as { id?: string } | null);
 
             scheduleRefresh(record?.id ?? null);
-          }
+          },
         )
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
-            table: "stores"
+            table: "stores",
           },
           () => {
             scheduleStoreRefresh();
-          }
+          },
         )
         .on(
           "postgres_changes",
           {
             event: "DELETE",
             schema: "public",
-            table: "stores"
+            table: "stores",
           },
           () => {
             scheduleStoreRefresh();
-          }
+          },
         )
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
@@ -341,16 +345,24 @@ export function OrdersDashboard({
 
   const totalDisplayPages = useMemo(
     () => Math.max(1, Math.ceil(orders.length / DISPLAY_PAGE_SIZE)),
-    [orders.length]
+    [orders.length],
   );
 
   const displayedOrders = useMemo(
-    () => orders.slice((displayPage - 1) * DISPLAY_PAGE_SIZE, displayPage * DISPLAY_PAGE_SIZE),
-    [orders, displayPage]
+    () =>
+      orders.slice(
+        (displayPage - 1) * DISPLAY_PAGE_SIZE,
+        displayPage * DISPLAY_PAGE_SIZE,
+      ),
+    [orders, displayPage],
   );
 
   function navigate(nextFilters: OrderFilters) {
-    const normalized = normalizeOrderFilters({ ...nextFilters, limit: 1000, page: 1 });
+    const normalized = normalizeOrderFilters({
+      ...nextFilters,
+      limit: 1000,
+      page: 1,
+    });
     const search = buildOrderSearchParams(normalized).toString();
 
     startTransition(() => {
@@ -385,14 +397,13 @@ export function OrdersDashboard({
       return {
         ...current,
         platform,
-        storeId: platform ? nextStoreId : current.storeId
+        storeId: platform ? nextStoreId : current.storeId,
       };
     });
   }
 
   return (
     <div className="min-h-screen bg-[#F9F9FB]">
-
       {/* ── Sticky Nav ── */}
       <header className="bg-white flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 border-b border-brand-ink-100">
         <div className="flex items-center gap-8">
@@ -408,7 +419,9 @@ export function OrdersDashboard({
               {realtimeEnabled && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-600 opacity-75" />
               )}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${realtimeEnabled ? "bg-brand-red-600" : "bg-amber-500"}`} />
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${realtimeEnabled ? "bg-brand-red-600" : "bg-amber-500"}`}
+              />
             </span>
             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-500">
               {realtimeEnabled ? "Live Syncing" : "Polling 15s"}
@@ -419,7 +432,15 @@ export function OrdersDashboard({
             href="/admin"
             title="Admin"
           >
-            <svg className="w-5 h-5 text-brand-ink-500" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 text-brand-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              viewBox="0 0 24 24"
+            >
               <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
               <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
@@ -429,7 +450,6 @@ export function OrdersDashboard({
 
       <main className="relative">
         <div className="max-w-[1600px] mx-auto px-8 py-10">
-
           {/* ── Hero Title ── */}
           <div className="flex justify-between items-end mb-12">
             <div>
@@ -445,7 +465,15 @@ export function OrdersDashboard({
                 className="bg-brand-ink-100 text-brand-ink-900 font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-lg hover:bg-brand-ink-200 transition-all flex items-center gap-2"
                 href="/scan"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
                   <path d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
                   <path d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75V16.5ZM16.5 6.75h.75v.75h-.75v-.75Z" />
                 </svg>
@@ -476,13 +504,24 @@ export function OrdersDashboard({
                     ref={searchInputRef}
                     className="bottom-docked-input w-full py-2 pr-8 text-sm text-brand-ink-900 placeholder:text-brand-ink-300"
                     onChange={(e) =>
-                      setDraftFilters((curr) => ({ ...curr, query: e.target.value || undefined }))
+                      setDraftFilters((curr) => ({
+                        ...curr,
+                        query: e.target.value || undefined,
+                      }))
                     }
                     placeholder="Order ID / AWB / buyer..."
                     type="search"
                     value={draftFilters.query ?? ""}
                   />
-                  <svg className="absolute right-0 top-2.5 w-4 h-4 text-brand-ink-300 pointer-events-none" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg
+                    className="absolute right-0 top-2.5 w-4 h-4 text-brand-ink-300 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
                     <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                 </div>
@@ -498,7 +537,7 @@ export function OrdersDashboard({
                     handlePlatformChange(
                       e.target.value === "shopee" || e.target.value === "lazada"
                         ? e.target.value
-                        : undefined
+                        : undefined,
                     )
                   }
                   value={draftFilters.platform ?? ""}
@@ -516,7 +555,10 @@ export function OrdersDashboard({
                 <select
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
                   onChange={(e) =>
-                    setDraftFilters((curr) => ({ ...curr, storeId: e.target.value || undefined }))
+                    setDraftFilters((curr) => ({
+                      ...curr,
+                      storeId: e.target.value || undefined,
+                    }))
                   }
                   value={draftFilters.storeId ?? ""}
                 >
@@ -536,7 +578,10 @@ export function OrdersDashboard({
                 <select
                   className="bottom-docked-input w-full py-2 text-sm text-brand-ink-900 appearance-none"
                   onChange={(e) =>
-                    setDraftFilters((curr) => ({ ...curr, status: e.target.value }))
+                    setDraftFilters((curr) => ({
+                      ...curr,
+                      status: e.target.value,
+                    }))
                   }
                   value={draftFilters.status}
                 >
@@ -559,7 +604,10 @@ export function OrdersDashboard({
                     setDraftFilters((curr) => ({
                       ...curr,
                       dateFrom: e.target.value,
-                      dateTo: curr.dateTo < e.target.value ? e.target.value : curr.dateTo,
+                      dateTo:
+                        curr.dateTo < e.target.value
+                          ? e.target.value
+                          : curr.dateTo,
                     }))
                   }
                   type="date"
@@ -576,7 +624,10 @@ export function OrdersDashboard({
                   max={maxWorkDate}
                   min={draftFilters.dateFrom}
                   onChange={(e) =>
-                    setDraftFilters((curr) => ({ ...curr, dateTo: e.target.value }))
+                    setDraftFilters((curr) => ({
+                      ...curr,
+                      dateTo: e.target.value,
+                    }))
                   }
                   type="date"
                   value={draftFilters.dateTo}
@@ -597,7 +648,15 @@ export function OrdersDashboard({
                   title="Reset filters"
                   type="button"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                   </svg>
                 </button>
@@ -609,14 +668,20 @@ export function OrdersDashboard({
           <div className="flex justify-between items-center mb-6 px-1">
             <div className="flex gap-8">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-brand-red-700">{total}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Total Orders</span>
+                <span className="text-3xl font-extrabold text-brand-red-700">
+                  {total}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  Total Orders
+                </span>
               </div>
               <div className="flex items-baseline gap-2 border-l border-brand-ink-200 pl-8">
                 <span className="text-3xl font-extrabold text-blue-600">
                   {orders.filter((o) => o.awb_status === "pending").length}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Pending Action</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                  Pending Action
+                </span>
               </div>
             </div>
             <div className="text-right">
@@ -625,7 +690,9 @@ export function OrdersDashboard({
               </p>
               <p className="text-xs text-brand-ink-500 font-medium">
                 Last synced:{" "}
-                <span className="text-brand-ink-900">{lastSyncedAt.toLocaleTimeString()}</span>
+                <span className="text-brand-ink-900">
+                  {lastSyncedAt.toLocaleTimeString()}
+                </span>
               </p>
             </div>
           </div>
@@ -635,18 +702,33 @@ export function OrdersDashboard({
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-brand-ink-50 border-b border-brand-ink-100">
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Order ID</th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Platform / Store</th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Buyer</th>
-                  <th className="text-center py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Items</th>
-                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Status</th>
-                  <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">Created</th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Order ID
+                  </th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Platform / Store
+                  </th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Buyer
+                  </th>
+                  <th className="text-center py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Items
+                  </th>
+                  <th className="text-left py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Status
+                  </th>
+                  <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400">
+                    Created
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-ink-100/50">
                 {displayedOrders.length === 0 ? (
                   <tr>
-                    <td className="py-16 text-center text-brand-ink-400 text-sm" colSpan={6}>
+                    <td
+                      className="py-16 text-center text-brand-ink-400 text-sm"
+                      colSpan={6}
+                    >
                       No orders found for the selected filters.
                     </td>
                   </tr>
@@ -667,20 +749,50 @@ export function OrdersDashboard({
                             className="text-brand-ink-300 hover:text-brand-red-600 transition-colors"
                             type="button"
                             onClick={() => {
-                              void navigator.clipboard.writeText(order.platform_order_id).then(() => {
-                                setCopiedOrderId(order.id);
-                                setTimeout(() => setCopiedOrderId(null), 1500);
-                              });
+                              void navigator.clipboard
+                                .writeText(order.platform_order_id)
+                                .then(() => {
+                                  setCopiedOrderId(order.id);
+                                  setTimeout(
+                                    () => setCopiedOrderId(null),
+                                    1500,
+                                  );
+                                });
                             }}
                           >
                             {copiedOrderId === order.id ? (
-                              <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                              <svg
+                                className="h-4 w-4 text-green-500"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2.5}
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M5 13l4 4L19 7"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                             ) : (
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <rect height="13" rx="2" width="13" x="9" y="9" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" />
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                viewBox="0 0 24 24"
+                              >
+                                <rect
+                                  height="13"
+                                  rx="2"
+                                  width="13"
+                                  x="9"
+                                  y="9"
+                                />
+                                <path
+                                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                  strokeLinecap="round"
+                                />
                               </svg>
                             )}
                           </button>
@@ -692,7 +804,9 @@ export function OrdersDashboard({
                             {order.store?.platform ?? "-"}
                           </span>
                           <span className="text-[11px] text-brand-ink-400">
-                            {order.store ? formatStoreLabel(order.store) : "Unknown store"}
+                            {order.store
+                              ? formatStoreLabel(order.store)
+                              : "Unknown store"}
                           </span>
                         </div>
                       </td>
@@ -703,11 +817,15 @@ export function OrdersDashboard({
                       </td>
                       <td className="py-5 px-6 text-center">
                         <span className="inline-flex items-center justify-center w-6 h-6 bg-brand-ink-100 rounded-full font-bold text-[10px] text-brand-ink-700">
-                          {Array.isArray(order.items_json) ? order.items_json.length : 0}
+                          {Array.isArray(order.items_json)
+                            ? order.items_json.length
+                            : 0}
                         </span>
                       </td>
                       <td className="py-5 px-6">
-                        <span className={`inline-flex px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider ${badgeClasses(order.awb_status)}`}>
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full font-bold text-[9px] uppercase tracking-wider ${badgeClasses(order.awb_status)}`}
+                        >
                           {formatOrderStatus(order.awb_status)}
                         </span>
                       </td>
@@ -726,7 +844,8 @@ export function OrdersDashboard({
             {totalDisplayPages > 1 && (
               <div className="bg-brand-ink-50 px-8 py-4 flex justify-between items-center border-t border-brand-ink-100">
                 <span className="text-[11px] text-brand-ink-400 font-medium">
-                  Page {displayPage} of {totalDisplayPages} ({orders.length} orders)
+                  Page {displayPage} of {totalDisplayPages} ({orders.length}{" "}
+                  orders)
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -749,7 +868,6 @@ export function OrdersDashboard({
               </div>
             )}
           </div>
-
         </div>
       </main>
 
@@ -759,7 +877,10 @@ export function OrdersDashboard({
           © 2026 SiS Warehouse Systems
         </span>
         <div className="flex gap-8">
-          <Link className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 hover:text-brand-red-700 transition-colors" href="/admin">
+          <Link
+            className="text-xs font-medium uppercase tracking-widest text-brand-ink-300 hover:text-brand-red-700 transition-colors"
+            href="/admin"
+          >
             Admin
           </Link>
         </div>
@@ -774,7 +895,6 @@ export function OrdersDashboard({
           </span>
         </div>
       </div>
-
     </div>
   );
 }
