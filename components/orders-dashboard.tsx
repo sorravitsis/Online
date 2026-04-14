@@ -690,7 +690,7 @@ export function OrdersDashboard({
               </p>
               <p className="text-xs text-brand-ink-500 font-medium">
                 Last synced:{" "}
-                <span className="text-brand-ink-900">
+                <span className="text-brand-ink-900" suppressHydrationWarning>
                   {lastSyncedAt.toLocaleTimeString()}
                 </span>
               </p>
@@ -830,7 +830,7 @@ export function OrdersDashboard({
                         </span>
                       </td>
                       <td className="py-5 px-6 text-right">
-                        <span className="text-[11px] text-brand-ink-400">
+                        <span className="text-[11px] text-brand-ink-400" suppressHydrationWarning>
                           {new Date(order.created_at).toLocaleString()}
                         </span>
                       </td>
