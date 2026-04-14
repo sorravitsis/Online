@@ -897,7 +897,7 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
               <img
                 key={src}
                 alt={alt}
-                className="h-20 w-auto object-contain opacity-40 grayscale hover:opacity-80 hover:grayscale-0 transition-all duration-300"
+                className="h-24 w-auto object-contain opacity-40 grayscale hover:opacity-80 hover:grayscale-0 transition-all duration-300"
                 src={src}
               />
             ))}
