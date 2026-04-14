@@ -10,8 +10,15 @@ const PUBLIC_PATHS = new Set([
   "/api/admin/lazada/callback"
 ]);
 
+// DEV ONLY: Set to true to bypass auth and go directly to Orders Dashboard
+const DEV_BYPASS_AUTH = true;
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (DEV_BYPASS_AUTH) {
+    return NextResponse.next();
+  }
 
   if (
     PUBLIC_PATHS.has(pathname) ||
