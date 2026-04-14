@@ -408,7 +408,7 @@ export function OrdersDashboard({
       <header className="bg-white flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50 border-b border-brand-ink-100">
         <div className="flex items-center gap-8">
           <div className="wordmark">
-            <span className="wordmark-badge">SiS</span>
+            <span className="wordmark-badge text-[18px]">SiS</span>
             <span className="wordmark-text">Warehouse</span>
           </div>
         </div>
