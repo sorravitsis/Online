@@ -129,6 +129,31 @@ export default function LoginPage() {
         </div>
       </main>
 
+      {/* Sponsors */}
+      <section className="w-full py-8 border-t border-brand-ink-100 bg-white">
+        <div className="container mx-auto max-w-6xl px-8 md:px-12">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-brand-ink-300 mb-5 text-center">
+            Our Technology Partners
+          </p>
+          <div className="flex items-center justify-center gap-10 flex-wrap">
+            {[
+              { src: "/logo_logitech.png", alt: "Logitech" },
+              { src: "/logo_xiaomi.png",   alt: "Xiaomi" },
+              { src: "/logo_asus.png",     alt: "ASUS" },
+              { src: "/logo_brother.png",  alt: "Brother" },
+            ].map(({ src, alt }) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={src}
+                alt={alt}
+                className="h-14 w-auto object-contain opacity-40 grayscale hover:opacity-80 hover:grayscale-0 transition-all duration-300"
+                src={src}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="w-full py-6 border-t border-brand-ink-100 bg-white">
         <div className="container mx-auto max-w-6xl px-8 md:px-12 flex flex-col md:flex-row justify-between items-center gap-3">
