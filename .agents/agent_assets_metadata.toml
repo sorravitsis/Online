@@ -36,3 +36,27 @@ id = "5VFkZo5ex4uwzxDOdi_Jf"
 uri = "file://attached_assets/xiaomi_devices.png"
 type = "image"
 title = "xiaomi smart devices"
+
+[[generated]]
+id = "w66ZPbMS_iL9zOTjVKPTw"
+uri = "file://attached_assets/logo_logitech.png"
+type = "image"
+title = "logitech logo"
+
+[[generated]]
+id = "9PKb2_eLzwY7ZeCXVj0U6"
+uri = "file://attached_assets/logo_xiaomi.png"
+type = "image"
+title = "xiaomi logo"
+
+[[generated]]
+id = "GzAAcgCigmrNk6vXDPk9O"
+uri = "file://attached_assets/logo_asus.png"
+type = "image"
+title = "asus logo"
+
+[[generated]]
+id = "PE7fKu4fgQRAK7xJbrA-W"
+uri = "file://attached_assets/logo_brother.png"
+type = "image"
+title = "brother logo"

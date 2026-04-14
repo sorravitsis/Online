@@ -881,6 +881,29 @@ export function AdminDashboard({ initialStores }: AdminDashboardProps) {
             </div>
           )}
         </section>
+
+        {/* ── Sponsors ── */}
+        <section className="mt-16 mb-4 px-2">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-brand-ink-300 mb-5 text-center">
+            Our Technology Partners
+          </p>
+          <div className="flex items-center justify-center gap-10 flex-wrap">
+            {[
+              { src: "/logo_logitech.png", alt: "Logitech" },
+              { src: "/logo_xiaomi.png",   alt: "Xiaomi" },
+              { src: "/logo_asus.png",     alt: "ASUS" },
+              { src: "/logo_brother.png",  alt: "Brother" },
+            ].map(({ src, alt }) => (
+              <img
+                key={src}
+                alt={alt}
+                className="h-8 w-auto object-contain opacity-40 grayscale hover:opacity-80 hover:grayscale-0 transition-all duration-300"
+                src={src}
+              />
+            ))}
+          </div>
+          <div className="mt-8 border-t border-brand-ink-100" />
+        </section>
       </div>
     </main>
   );
