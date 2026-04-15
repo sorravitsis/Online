@@ -900,18 +900,7 @@ export function OrdersDashboard({
       </main>
 
       {/* ── Product Strip ── */}
-      <section className="w-full px-8 py-8 mt-12">
-        <div className="flex items-center gap-4 mb-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 dark:text-white/20">
-            Our Equipment
-          </p>
-          <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt="Logitech" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_logitech.png" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt="ASUS" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_asus.png" />
-          </div>
-        </div>
+      <section className="w-full px-8 pb-8 mt-4">
 
         {/* Creative non-uniform layout */}
         <div className="flex gap-3 items-end" style={{ height: "220px" }}>
