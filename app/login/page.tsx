@@ -145,8 +145,7 @@ export default function LoginPage() {
                     </span>
                   </div>
                   <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-brand-ink-900 dark:text-white leading-[1.05] uppercase">
-                    เข้าสู่<br />
-                    <span className="text-red-600">ระบบ</span>
+                    เข้าสู่ <span className="text-red-600">ระบบ</span>
                   </h1>
                 </div>
 
