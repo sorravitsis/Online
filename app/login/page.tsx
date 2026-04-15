@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#080808]">
+    <div className="dark min-h-screen flex flex-col bg-[#080808]">
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-brand-ink-100 dark:border-white/10 flex justify-between items-center px-8 md:px-12 py-5">
         <div className="wordmark">
