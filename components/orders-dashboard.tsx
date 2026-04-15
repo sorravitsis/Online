@@ -899,32 +899,84 @@ export function OrdersDashboard({
         </div>
       </main>
 
-      {/* ── Logitech Product Strip ── */}
+      {/* ── Product Strip ── */}
       <section className="w-full px-8 py-8 mt-12">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 dark:text-white/20 mb-4">
-          Powered by Logitech
-        </p>
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { src: "/logitech_keyboard.png", label: "MX Keys S" },
-            { src: "/logitech_mouse.png",    label: "MX Master 3S" },
-            { src: "/logitech_webcam.png",   label: "BRIO Webcam" },
-            { src: "/logitech_headset.png",  label: "G Pro Headset" },
-          ].map(({ src, label }) => (
-            <div
-              key={src}
-              className="rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] flex flex-col items-center p-4 gap-3"
-            >
-              <img
-                alt={label}
-                className="w-full h-36 object-contain dark:opacity-70"
-                src={src}
-              />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/30">
-                {label}
-              </span>
+        <div className="flex items-center gap-4 mb-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-300 dark:text-white/20">
+            Our Equipment
+          </p>
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Logitech" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_logitech.png" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Brother" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_brother.png" />
+          </div>
+        </div>
+
+        {/* Creative non-uniform layout */}
+        <div className="flex gap-3 items-end" style={{ height: "220px" }}>
+
+          {/* Keyboard — widest, tallest, slight counter-tilt */}
+          <div
+            className="relative rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] group hover:scale-[1.02] transition-all duration-300 flex-[2.2]"
+            style={{ height: "100%", transform: "rotate(-1deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="MX Keys S" className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 dark:opacity-80" src="/logitech_keyboard.png" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/40 to-transparent">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white">MX Keys S</span>
             </div>
-          ))}
+          </div>
+
+          {/* Mouse — medium, slightly raised */}
+          <div
+            className="relative rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] group hover:scale-[1.03] transition-all duration-300 flex-1"
+            style={{ height: "88%", transform: "rotate(1.5deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="MX Master 3S" className="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform duration-500 dark:opacity-80" src="/logitech_mouse.png" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/40 to-transparent">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white">MX Master 3S</span>
+            </div>
+          </div>
+
+          {/* Webcam — shortest, grounded */}
+          <div
+            className="relative rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] group hover:scale-[1.03] transition-all duration-300 flex-1"
+            style={{ height: "72%", transform: "rotate(-2deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="BRIO Webcam" className="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform duration-500 dark:opacity-80" src="/logitech_webcam.png" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/40 to-transparent">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white">BRIO Webcam</span>
+            </div>
+          </div>
+
+          {/* Headset — tall, slight tilt */}
+          <div
+            className="relative rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] group hover:scale-[1.03] transition-all duration-300 flex-[1.3]"
+            style={{ height: "92%", transform: "rotate(1deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="G Pro Headset" className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500 dark:opacity-80" src="/logitech_headset.png" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/40 to-transparent">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white">G Pro Headset</span>
+            </div>
+          </div>
+
+          {/* Brother — accent card with logo, medium height */}
+          <div
+            className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-brand-ink-50 to-red-50 dark:from-white/[0.04] dark:to-red-950/20 border-2 border-red-200/60 dark:border-red-900/30 group hover:scale-[1.04] transition-all duration-300 flex-1 flex flex-col items-center justify-center gap-3 p-4"
+            style={{ height: "80%", transform: "rotate(-1.5deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="Brother" className="w-full max-h-16 object-contain dark:invert opacity-70 group-hover:opacity-100 transition-opacity" src="/logo_brother.png" />
+            <div className="text-center">
+              <span className="text-[9px] font-black uppercase tracking-widest text-brand-ink-400 dark:text-white/40 block">Label Printer</span>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-red-500 block mt-0.5">QL Series</span>
+            </div>
+          </div>
+
         </div>
       </section>
 
