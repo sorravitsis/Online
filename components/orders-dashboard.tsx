@@ -525,7 +525,6 @@ export function OrdersDashboard({
 
           {/* ── Filter Panel ── */}
           <section className="kinetic-glass-panel rounded-xl p-8 mb-10 relative overflow-hidden shadow-sm">
-            <div className="absolute left-0 top-0 w-1 h-full bg-brand-red-700" />
             <form
               className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-8"
               onSubmit={handleFilterSubmit}
