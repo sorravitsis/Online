@@ -478,8 +478,16 @@ export function OrdersDashboard({
       <main className="relative">
         <div className="max-w-[1600px] mx-auto px-8 py-10">
           {/* ── Hero Title ── */}
-          <div className="flex justify-between items-end mb-12">
-            <div>
+          <div className="relative flex justify-between items-end mb-12 rounded-2xl px-6 py-5 overflow-hidden">
+            {/* Xiaomi devices background */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-[0.08] dark:opacity-[0.06]"
+              src="/xiaomi_devices.png"
+            />
+            <div className="relative z-10">
               <span className="font-bold uppercase tracking-[0.2em] text-sm mb-2 block text-brand-red-700">
                 System Dashboard
               </span>
@@ -487,7 +495,7 @@ export function OrdersDashboard({
                 Order Queue
               </h1>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-4 relative z-10">
               <Link
                 className="bg-brand-ink-100 dark:bg-white/[0.08] text-brand-ink-900 dark:text-white font-bold uppercase tracking-wider text-xs px-6 py-3 rounded-lg hover:bg-brand-ink-200 dark:hover:bg-white/[0.14] transition-all flex items-center gap-2"
                 href="/scan"
