@@ -23,6 +23,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,27 +69,23 @@ export function LoginForm() {
         <div className="relative">
           <input
             autoComplete="current-password"
-            className="w-full bg-brand-ink-50 dark:bg-white/[0.06] border-none rounded-xl px-6 py-5 text-xl tracking-[0.4em] text-brand-ink-900 dark:text-white placeholder:text-brand-ink-200 dark:placeholder:text-white/20 placeholder:tracking-widest outline-none focus:ring-2 focus:ring-brand-red-100 dark:focus:ring-brand-red-900/40 transition-all duration-150"
+            className="w-full bg-brand-ink-50 dark:bg-white/[0.06] border-none rounded-xl px-6 py-5 pr-28 text-xl tracking-[0.4em] text-brand-ink-900 dark:text-white placeholder:text-brand-ink-200 dark:placeholder:text-white/20 placeholder:tracking-widest outline-none focus:ring-2 focus:ring-brand-red-100 dark:focus:ring-brand-red-900/40 transition-all duration-150"
             id="password"
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            type="password"
+            type={isPasswordVisible ? "text" : "password"}
             value={password}
           />
-          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-            <svg
-              className="w-5 h-5 text-brand-ink-300"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-            >
-              <path d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-            </svg>
-          </div>
+          <button
+            aria-controls="password"
+            aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+            className="absolute inset-y-0 right-4 flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-brand-ink-400 transition-colors hover:text-brand-red-600 focus-visible:outline-none focus-visible:text-brand-red-600 dark:text-white/45 dark:hover:text-red-400 dark:focus-visible:text-red-400"
+            onClick={() => setIsPasswordVisible((current) => !current)}
+            type="button"
+          >
+            {isPasswordVisible ? "Hide" : "Show"}
+          </button>
         </div>
       </div>
 
