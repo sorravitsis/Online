@@ -909,7 +909,7 @@ export function OrdersDashboard({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img alt="Logitech" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_logitech.png" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt="Brother" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_brother.png" />
+            <img alt="ASUS" className="h-3.5 w-auto opacity-25 dark:opacity-20 dark:invert" src="/logo_asus.png" />
           </div>
         </div>
 
@@ -964,16 +964,17 @@ export function OrdersDashboard({
             </div>
           </div>
 
-          {/* Brother — accent card with logo, medium height */}
+          {/* ASUS — notebook card, medium height */}
           <div
-            className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-brand-ink-50 to-red-50 dark:from-white/[0.04] dark:to-red-950/20 border-2 border-red-200/60 dark:border-red-900/30 group hover:scale-[1.04] transition-all duration-300 flex-1 flex flex-col items-center justify-center gap-3 p-4"
+            className="relative rounded-2xl overflow-hidden bg-brand-ink-50 dark:bg-white/[0.04] border border-brand-ink-100 dark:border-white/[0.06] group hover:scale-[1.04] transition-all duration-300 flex-[1.4]"
             style={{ height: "80%", transform: "rotate(-1.5deg)" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt="Brother" className="w-full max-h-16 object-contain dark:invert opacity-70 group-hover:opacity-100 transition-opacity" src="/logo_brother.png" />
-            <div className="text-center">
-              <span className="text-[9px] font-black uppercase tracking-widest text-brand-ink-400 dark:text-white/40 block">Label Printer</span>
-              <span className="text-[8px] font-bold uppercase tracking-wider text-red-500 block mt-0.5">QL Series</span>
+            <img alt="ASUS Notebook" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 dark:opacity-80" src="/asus_notebook.png" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="ASUS" className="h-3 w-auto object-contain invert" src="/logo_asus.png" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white">Notebook</span>
             </div>
           </div>
 
