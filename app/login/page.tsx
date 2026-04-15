@@ -6,8 +6,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#080808]">
+      {/* Bold red top bar — light only */}
+      <div className="h-1 w-full bg-gradient-to-r from-red-700 via-red-500 to-red-700 dark:hidden" />
+
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 dark:bg-black/80 backdrop-blur-xl border-b border-red-100 dark:border-white/10 flex justify-between items-center px-8 md:px-12 py-5">
+      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-black/80 backdrop-blur-xl border-b-2 border-red-600/20 dark:border-white/10 flex justify-between items-center px-8 md:px-12 py-4">
         <div className="wordmark">
           <span className="wordmark-badge text-[18px]">SiS</span>
           <span className="wordmark-text">Warehouse</span>
@@ -24,13 +27,20 @@ export default function LoginPage() {
       {/* Main */}
       <main className="flex-1 flex items-center justify-center relative overflow-hidden px-6 py-12 md:py-16">
 
-        {/* Light mode: subtle red tint corners */}
+        {/* Light mode: bold red diagonal wash */}
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none dark:hidden"
           style={{
-            background: "radial-gradient(ellipse 60% 50% at 0% 0%, rgba(200,16,46,0.06) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(200,16,46,0.04) 0%, transparent 70%)",
+            background: "linear-gradient(135deg, rgba(200,16,46,0.10) 0%, transparent 45%), radial-gradient(ellipse 70% 60% at 0% 0%, rgba(200,16,46,0.14) 0%, transparent 65%), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(200,16,46,0.08) 0%, transparent 70%)",
           }}
+        />
+
+        {/* Light mode: bold red left stripe */}
+        <div
+          aria-hidden
+          className="absolute top-0 left-0 bottom-0 w-1.5 dark:hidden"
+          style={{ background: "linear-gradient(to bottom, #C8102E, #9b0e24, #C8102E)" }}
         />
 
         {/* Dark mode: red glow orbs */}
@@ -45,7 +55,7 @@ export default function LoginPage() {
         {/* Hex grid */}
         <div
           aria-hidden
-          className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.07]"
+          className="absolute inset-0 pointer-events-none opacity-[0.12] dark:opacity-[0.07]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-rule='evenodd' stroke='%23C8102E' fill='none' stroke-width='0.8'/%3E%3C/svg%3E")`,
             backgroundSize: "60px",
@@ -138,22 +148,32 @@ export default function LoginPage() {
 
                 {/* Heading */}
                 <div className="mb-8 text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 mb-5">
+                  {/* Warning tag — light mode only */}
+                  <div className="inline-flex items-center gap-2 bg-red-600 text-white text-[9px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded mb-4 dark:hidden">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    Authorized Access Only
+                  </div>
+                  {/* Dark mode label */}
+                  <div className="hidden dark:inline-flex items-center gap-2 mb-5">
                     <div className="w-10 h-0.5 bg-red-600" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 dark:text-red-500">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
                       Secure Login
                     </span>
                   </div>
-                  <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-brand-ink-900 dark:text-white leading-[1.05] uppercase">
+                  <h1 className="text-5xl lg:text-6xl font-black tracking-tighter text-brand-ink-900 dark:text-white leading-[1.0] uppercase">
                     เข้าสู่ <span className="text-red-600">ระบบ</span>
                   </h1>
+                  {/* Bold red underline — light mode only */}
+                  <div className="mt-3 w-16 h-1 bg-red-600 rounded-full dark:hidden" />
                 </div>
 
                 {/* Login card */}
                 <div
-                  className="bg-brand-ink-50 dark:bg-white/[0.04] border border-red-100 dark:border-white/10 px-8 pt-8 pb-10 rounded-2xl relative overflow-hidden group shadow-xl shadow-red-100/60 dark:shadow-none"
-                  style={{ boxShadow: undefined }}
+                  className="bg-white dark:bg-white/[0.04] border-2 border-red-600/20 dark:border-white/10 px-8 pt-8 pb-10 rounded-2xl relative overflow-hidden group dark:shadow-none"
+                  style={{ boxShadow: "0 8px 40px rgba(200,16,46,0.18), 0 2px 8px rgba(200,16,46,0.10)" }}
                 >
+                  {/* Bold red left border accent — light mode */}
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-700 dark:hidden rounded-l-2xl" />
                   {/* Animated top accent */}
                   <div className="absolute top-0 left-0 right-0 h-[3px] bg-red-100 dark:bg-white/5">
                     <div className="h-full bg-gradient-to-r from-red-500 to-red-700 w-1/3 group-focus-within:w-full transition-all duration-700" />
@@ -200,7 +220,7 @@ export default function LoginPage() {
       </main>
 
       {/* Sponsors */}
-      <section className="w-full py-8 border-t border-red-100 dark:border-white/10 bg-brand-ink-50/60 dark:bg-black/40">
+      <section className="w-full py-8 border-t-2 border-red-600/15 dark:border-white/10 bg-red-50/60 dark:bg-black/40">
         <div className="container mx-auto max-w-6xl px-8 md:px-12">
           <p className="text-[9px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/20 mb-5 text-center">
             Our Technology Partners
