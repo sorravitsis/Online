@@ -484,7 +484,7 @@ export function OrdersDashboard({
             <img
               alt=""
               aria-hidden
-              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-[0.08] dark:opacity-[0.06]"
+              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-[0.28] dark:opacity-[0.18]"
               src="/xiaomi_devices.png"
             />
             <div className="relative z-10">
