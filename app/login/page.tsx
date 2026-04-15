@@ -128,17 +128,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Floating brand badge */}
-              <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-40">
-                <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md border border-red-100 dark:border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 shadow-md">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt="Logitech" className="h-4 w-auto dark:invert" src="/logo_logitech.png" />
-                </div>
-                <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md border border-red-100 dark:border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 shadow-md">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt="ASUS" className="h-4 w-auto dark:invert" src="/logo_asus.png" />
-                </div>
-              </div>
 
             </div>
 
