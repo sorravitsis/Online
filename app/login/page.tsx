@@ -55,105 +55,78 @@ export default function LoginPage() {
         <div className="w-full max-w-6xl relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-            {/* Left — Product Showcase */}
-            <div className="hidden lg:flex flex-col gap-6">
+            {/* Left — Product Collage */}
+            <div className="hidden lg:block relative" style={{ height: "520px" }}>
 
-              {/* Label */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-red-600 dark:text-red-500 mb-2">
-                  ⬛ Premium Tech Products
-                </p>
-                <h2 className="text-3xl font-black leading-tight tracking-tighter text-brand-ink-900 dark:text-white">
-                  สินค้า IT คุณภาพสูง<br />
-                  <span className="text-red-600">Logitech · ASUS</span>
-                </h2>
+              {/* ASUS Notebook — large, anchored top-left, slight tilt */}
+              <div className="absolute top-0 left-0 w-[68%] rounded-2xl overflow-hidden shadow-2xl border border-red-100 dark:border-white/10 group"
+                style={{ transform: "rotate(-2deg)", zIndex: 10 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="ASUS Notebook" className="w-full h-52 object-cover object-center group-hover:scale-[1.04] transition-transform duration-500" src="/asus_notebook.png" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-4 flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="ASUS" className="h-4 w-auto object-contain invert" src="/logo_asus.png" />
+                  <span className="text-white text-[10px] font-bold">Notebook</span>
+                </div>
+                <div className="absolute top-3 right-3 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md">Partner</div>
               </div>
 
-              {/* Product grid */}
-              <div className="grid grid-cols-2 gap-3">
-
-                {/* ASUS Notebook — spans full width */}
-                <div className="col-span-2 relative rounded-2xl overflow-hidden border border-red-100 dark:border-white/10 bg-brand-ink-50 dark:bg-white/[0.03] shadow-lg group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="ASUS Notebook"
-                    className="w-full h-44 object-cover object-center group-hover:scale-[1.03] transition-transform duration-500"
-                    src="/asus_notebook.png"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/70 to-transparent flex items-center gap-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="ASUS" className="h-5 w-auto object-contain invert" src="/logo_asus.png" />
-                    <span className="text-white text-xs font-bold">Notebook & Accessories</span>
-                  </div>
-                  <div className="absolute top-3 right-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">
-                    Partner
-                  </div>
+              {/* Logitech Keyboard — mid-right, overlapping, counter-tilt */}
+              <div className="absolute top-28 right-0 w-[52%] rounded-xl overflow-hidden shadow-xl border border-red-100 dark:border-white/10 group"
+                style={{ transform: "rotate(2.5deg)", zIndex: 20 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="Logitech Keyboard" className="w-full h-36 object-cover group-hover:scale-[1.05] transition-transform duration-500" src="/logitech_keyboard.png" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-3">
+                  <span className="text-white text-[10px] font-bold">Keyboard</span>
                 </div>
-
-                {/* Logitech Mouse */}
-                <div className="relative rounded-xl overflow-hidden border border-red-100 dark:border-white/10 bg-brand-ink-50 dark:bg-white/[0.03] shadow group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="Logitech Mouse"
-                    className="w-full h-32 object-cover object-center group-hover:scale-[1.05] transition-transform duration-500"
-                    src="/logitech_mouse.png"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                    <span className="text-white text-[10px] font-bold">Mouse</span>
-                  </div>
-                </div>
-
-                {/* Logitech Keyboard */}
-                <div className="relative rounded-xl overflow-hidden border border-red-100 dark:border-white/10 bg-brand-ink-50 dark:bg-white/[0.03] shadow group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="Logitech Keyboard"
-                    className="w-full h-32 object-cover object-center group-hover:scale-[1.05] transition-transform duration-500"
-                    src="/logitech_keyboard.png"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                    <span className="text-white text-[10px] font-bold">Keyboard</span>
-                  </div>
-                </div>
-
-                {/* Logitech Webcam */}
-                <div className="relative rounded-xl overflow-hidden border border-red-100 dark:border-white/10 bg-brand-ink-50 dark:bg-white/[0.03] shadow group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="Logitech Webcam"
-                    className="w-full h-28 object-cover object-center group-hover:scale-[1.05] transition-transform duration-500"
-                    src="/logitech_webcam.png"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                    <span className="text-white text-[10px] font-bold">Webcam</span>
-                  </div>
-                </div>
-
-                {/* Logitech Headset */}
-                <div className="relative rounded-xl overflow-hidden border border-red-100 dark:border-white/10 bg-brand-ink-50 dark:bg-white/[0.03] shadow group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt="Logitech Headset"
-                    className="w-full h-28 object-cover object-center group-hover:scale-[1.05] transition-transform duration-500"
-                    src="/logitech_headset.png"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                    <span className="text-white text-[10px] font-bold">Headset</span>
-                  </div>
-                </div>
-
               </div>
 
-              {/* Brand logos row */}
-              <div className="flex items-center gap-4 pt-1">
-                <span className="text-[9px] uppercase tracking-widest font-bold text-brand-ink-400 dark:text-white/30">
-                  Authorized Reseller
-                </span>
-                <div className="flex items-center gap-4">
+              {/* Logitech Mouse — bottom-left, pops forward */}
+              <div className="absolute bottom-12 left-4 w-[38%] rounded-xl overflow-hidden shadow-2xl border-2 border-red-500/30 dark:border-red-700/40 group"
+                style={{ transform: "rotate(1.5deg)", zIndex: 30 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="Logitech Mouse" className="w-full h-36 object-cover group-hover:scale-[1.06] transition-transform duration-500" src="/logitech_mouse.png" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt="Logitech" className="h-6 w-auto object-contain opacity-60 dark:opacity-40 dark:invert hover:opacity-100 transition-opacity" src="/logo_logitech.png" />
+                  <img alt="Logitech" className="h-3 w-auto object-contain invert" src="/logo_logitech.png" />
+                  <span className="text-white text-[10px] font-bold">Mouse</span>
+                </div>
+              </div>
+
+              {/* Logitech Headset — bottom-right, slightly raised */}
+              <div className="absolute bottom-0 right-8 w-[42%] rounded-xl overflow-hidden shadow-xl border border-red-100 dark:border-white/10 group"
+                style={{ transform: "rotate(-1.5deg)", zIndex: 25 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="Logitech Headset" className="w-full h-40 object-cover group-hover:scale-[1.05] transition-transform duration-500" src="/logitech_headset.png" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-3">
+                  <span className="text-white text-[10px] font-bold">Headset</span>
+                </div>
+              </div>
+
+              {/* Logitech Webcam — mid-center, small accent card */}
+              <div className="absolute top-[46%] left-[30%] w-[28%] rounded-xl overflow-hidden shadow-lg border border-red-200 dark:border-white/10 group"
+                style={{ transform: "rotate(-3deg)", zIndex: 35 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="Logitech Webcam" className="w-full h-28 object-cover group-hover:scale-[1.07] transition-transform duration-500" src="/logitech_webcam.png" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-3">
+                  <span className="text-white text-[10px] font-bold">Webcam</span>
+                </div>
+              </div>
+
+              {/* Floating brand badge */}
+              <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-40">
+                <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md border border-red-100 dark:border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 shadow-md">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt="ASUS" className="h-6 w-auto object-contain opacity-60 dark:opacity-40 dark:invert hover:opacity-100 transition-opacity" src="/logo_asus.png" />
+                  <img alt="Logitech" className="h-4 w-auto dark:invert" src="/logo_logitech.png" />
+                </div>
+                <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md border border-red-100 dark:border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 shadow-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt="ASUS" className="h-4 w-auto dark:invert" src="/logo_asus.png" />
                 </div>
               </div>
 
