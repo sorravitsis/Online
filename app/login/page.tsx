@@ -143,8 +143,16 @@ export default function LoginPage() {
             </div>
 
             {/* Right — login form */}
-            <div className="flex flex-col items-center lg:items-start">
-              <div className="max-w-md w-full">
+            <div className="flex flex-col items-center lg:items-start relative">
+              {/* Xiaomi devices background */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt=""
+                aria-hidden
+                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-[0.07] dark:opacity-[0.05] rounded-3xl"
+                src="/xiaomi_devices.png"
+              />
+              <div className="max-w-md w-full relative z-10">
 
                 {/* Heading */}
                 <div className="mb-8 text-center lg:text-left">
