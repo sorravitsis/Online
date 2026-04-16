@@ -53,6 +53,14 @@ function maxDate(a: string, b: string): string {
   return a >= b ? a : b;
 }
 
+function printButtonClasses(status: string, result: "ok" | "err" | undefined) {
+  const base = "flex items-center justify-center w-8 h-8 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed";
+  if (result === "ok") return `${base} bg-green-100 text-green-600`;
+  if (result === "err") return `${base} bg-red-100 text-red-600`;
+  if (status === "failed") return `${base} bg-amber-50 text-amber-600 hover:bg-amber-100`;
+  return `${base} bg-brand-ink-50 dark:bg-white/[0.06] text-brand-ink-500 dark:text-white/50 hover:bg-brand-red-50 hover:text-brand-red-600`;
+}
+
 function badgeClasses(status: string) {
   switch (status) {
     case "pending":
@@ -66,6 +74,71 @@ function badgeClasses(status: string) {
     default:
       return "bg-brand-ink-100 text-brand-ink-500";
   }
+}
+
+function PrintButton({
+  isLoading,
+  disabled,
+  result,
+  status,
+  onPrint,
+}: Readonly<{
+  isLoading: boolean;
+  disabled: boolean;
+  result: "ok" | "err" | undefined;
+  status: string;
+  onPrint: () => void;
+}>) {
+  const label = status === "failed" ? "Retry print" : "Print label";
+
+  let icon: React.ReactNode;
+  if (isLoading) {
+    icon = (
+      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+        <path className="opacity-75" d="M4 12a8 8 0 018-8" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+      </svg>
+    );
+  } else if (result === "ok") {
+    icon = (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7" />
+      </svg>
+    );
+  } else if (result === "err") {
+    icon = (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+  } else if (status === "failed") {
+    icon = (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+        <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    );
+  } else {
+    icon = (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+        <path d="M6 9V3h12v6" />
+        <rect height="8" rx="1" width="12" x="6" y="14" />
+      </svg>
+    );
+  }
+
+  return (
+    <button
+      aria-label={label}
+      className={printButtonClasses(status, result)}
+      disabled={disabled}
+      title={label}
+      type="button"
+      onClick={onPrint}
+    >
+      {icon}
+    </button>
+  );
 }
 
 export function OrdersDashboard({
@@ -87,6 +160,8 @@ export function OrdersDashboard({
   const [isSyncing, setIsSyncing] = useState(false);
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
+  const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
+  const [printResultMap, setPrintResultMap] = useState<Record<string, "ok" | "err">>({});
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -397,6 +472,27 @@ export function OrdersDashboard({
       setCopiedOrderId(rowId);
       setTimeout(() => setCopiedOrderId(null), 1500);
     });
+  }
+
+  async function handlePrint(rowId: string, status: string) {
+    if (printingOrderId) return;
+    setPrintingOrderId(rowId);
+
+    const endpoint = status === "failed" ? "/api/awb/retry" : "/api/awb/single";
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: rowId }),
+      });
+      const ok = res.ok && (await res.json().then((j: { success?: boolean }) => j.success).catch(() => false));
+      setPrintResultMap((prev) => ({ ...prev, [rowId]: ok ? "ok" : "err" }));
+      if (ok) setTimeout(() => setPrintResultMap((prev) => { const next = { ...prev }; delete next[rowId]; return next; }), 3000);
+    } catch {
+      setPrintResultMap((prev) => ({ ...prev, [rowId]: "err" }));
+    } finally {
+      setPrintingOrderId(null);
+    }
   }
 
   function handlePlatformChange(platform: Platform | undefined) {
@@ -757,6 +853,7 @@ export function OrdersDashboard({
                   <th className="text-right py-5 px-6 text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40">
                     Created
                   </th>
+                  <th className="py-5 px-4 w-[72px]" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-ink-100/50 dark:divide-white/[0.06]">
@@ -764,7 +861,7 @@ export function OrdersDashboard({
                   <tr>
                     <td
                       className="py-16 text-center text-brand-ink-400 dark:text-white/30 text-sm"
-                      colSpan={6}
+                      colSpan={7}
                     >
                       No orders found for the selected filters.
                     </td>
@@ -860,6 +957,17 @@ export function OrdersDashboard({
                         <span className="text-[11px] text-brand-ink-400 dark:text-white/30" suppressHydrationWarning>
                           {new Date(order.created_at).toLocaleString()}
                         </span>
+                      </td>
+                      <td className="py-5 px-4">
+                        {(order.awb_status === "pending" || order.awb_status === "failed") && (
+                          <PrintButton
+                            isLoading={printingOrderId === order.id}
+                            disabled={printingOrderId !== null}
+                            result={printResultMap[order.id]}
+                            status={order.awb_status}
+                            onPrint={() => void handlePrint(order.id, order.awb_status)}
+                          />
+                        )}
                       </td>
                     </tr>
                   ))
