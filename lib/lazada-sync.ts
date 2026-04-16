@@ -61,12 +61,12 @@ function extractOrderFields(order: LazadaOrder, storeId: string) {
     };
   });
 
-  const trackingNumbers = items
+  const awbNumber = items
     .map((item) => {
       const rec = toRecord(item);
       return asString(rec.tracking_code) ?? asString(rec.tracking_number);
     })
-    .filter((v): v is string => Boolean(v));
+    .find((v): v is string => Boolean(v)) ?? null;
 
   const createdAt = asString(order.created_at) ?? asString(order.order_created_at);
 
@@ -76,12 +76,12 @@ function extractOrderFields(order: LazadaOrder, storeId: string) {
     buyer_name: buyerName ?? null,
     items_json: itemsSummary.length > 0 ? itemsSummary : [],
     platform_status: platformStatus,
-    awb_number: trackingNumbers[0] ?? null,
+    awb_number: awbNumber,
     created_at: createdAt ?? new Date().toISOString(),
   };
 }
 
-async function fetchLazadaOrders(store: StoreRow, accessToken: string) {
+async function fetchLazadaOrders(accessToken: string) {
   const allOrders: LazadaOrder[] = [];
   const createdAfter = new Date(Date.now() - SYNC_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
 
@@ -123,7 +123,7 @@ async function syncStoreOrders(store: StoreRow): Promise<SyncResult> {
 
   try {
     const token = await ensureLazadaAccessToken(store);
-    const orders = await fetchLazadaOrders(store, token.accessToken);
+    const orders = await fetchLazadaOrders(token.accessToken);
 
     if (orders.length === 0) {
       return result;
