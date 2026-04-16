@@ -17,6 +17,13 @@ type LazadaPackItemResult = {
   msg?: string;
 };
 
+type LazadaPackageActionResult = {
+  package_id?: string;
+  item_err_code?: string | number;
+  msg?: string;
+  retry?: boolean;
+};
+
 export function normalizeLazadaOrderItems(envelope: Record<string, unknown>) {
   const data = unwrapLazadaResult<unknown>(envelope, "get_order_items");
 
@@ -121,6 +128,39 @@ function parsePackResponse(envelope: Record<string, unknown>) {
       )
     )
   };
+}
+
+function isIgnorableReadyToShipMessage(message: string | undefined) {
+  const normalized = lower(message);
+
+  return (
+    normalized.includes("already ready to ship") ||
+    normalized.includes("already in ready to ship") ||
+    normalized.includes("already rts")
+  );
+}
+
+function parseReadyToShipResponse(envelope: Record<string, unknown>) {
+  const data = unwrapLazadaResult<Record<string, unknown>>(envelope, "ready_to_ship");
+  const packages = asArray(data.packages ?? data.package_list).map(
+    (item) => toRecord(item) as LazadaPackageActionResult
+  );
+
+  const failed = packages.filter((item) => {
+    const code = `${item.item_err_code ?? "0"}`;
+    if (code === "0") {
+      return false;
+    }
+
+    return !isIgnorableReadyToShipMessage(item.msg);
+  });
+
+  if (failed.length > 0) {
+    const message = failed
+      .map((item) => `${item.package_id ?? "unknown_package"}: ${item.msg ?? "ready_to_ship_failed"}`)
+      .join("; ");
+    throw new Error(`ready_to_ship: ${message}`);
+  }
 }
 
 function deriveSellerCenterOrigin() {
@@ -293,6 +333,21 @@ async function printAwbForPackages(accessToken: string, packageIds: string[]) {
   );
 }
 
+async function markPackagesReadyToShip(accessToken: string, packageIds: string[]) {
+  const envelope = await callWithPayloadFallback(
+    "/order/package/rts",
+    accessToken,
+    {
+      packages: packageIds.map((packageId) => ({
+        package_id: packageId
+      }))
+    },
+    ["readyToShipReq", "rtsReq", "payload"]
+  );
+
+  parseReadyToShipResponse(envelope);
+}
+
 export const lazadaAdapter: PlatformAdapter = {
   async generateAWB(order) {
     if (!order.store) {
@@ -330,6 +385,7 @@ export const lazadaAdapter: PlatformAdapter = {
 
     const documentEnvelope = await printAwbForPackages(token.accessToken, packed.packageIds);
     const pdf = await resolveDocumentPdf(documentEnvelope);
+    await markPackagesReadyToShip(token.accessToken, packed.packageIds);
 
     return {
       pdf,
