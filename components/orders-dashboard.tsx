@@ -175,6 +175,7 @@ export function OrdersDashboard({
   const [printResultMap, setPrintResultMap] = useState<Record<string, "ok" | "queued" | "err">>({});
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
+  const [lazadaSyncing, setLazadaSyncing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const storeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -517,6 +518,26 @@ export function OrdersDashboard({
     window.open(`/api/print-jobs/download?orderId=${orderId}`, "_blank");
   }
 
+  async function handleSyncLazada() {
+    if (lazadaSyncing) return;
+    setLazadaSyncing(true);
+    try {
+      const res = await fetch("/api/orders/sync-lazada", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        setLastSyncedAt(new Date());
+        router.refresh();
+      }
+    } catch {
+      // silently fail — orders will refresh on next poll
+    } finally {
+      setLazadaSyncing(false);
+    }
+  }
+
   function handlePlatformChange(platform: Platform | undefined) {
     setDraftFilters((current) => {
       const nextStoreId =
@@ -839,16 +860,38 @@ export function OrdersDashboard({
                 </span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40 mb-1">
-                {isPending || isSyncing ? "Syncing…" : "System Pulse"}
-              </p>
-              <p className="text-xs text-brand-ink-500 dark:text-white/40 font-medium">
-                Last synced:{" "}
-                <span className="text-brand-ink-900 dark:text-white/70" suppressHydrationWarning>
-                  {lastSyncedAt.toLocaleTimeString()}
-                </span>
-              </p>
+            <div className="flex items-center gap-4">
+              <button
+                className="flex items-center gap-2 px-4 h-[36px] rounded-lg text-xs font-bold uppercase tracking-widest border transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50"
+                disabled={lazadaSyncing}
+                onClick={handleSyncLazada}
+                title="Fetch latest orders from Lazada API"
+                type="button"
+              >
+                <svg
+                  className={`w-4 h-4 ${lazadaSyncing ? "animate-spin" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                {lazadaSyncing ? "Syncing…" : "Sync Lazada"}
+              </button>
+              <div className="text-right">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ink-400 dark:text-white/40 mb-1">
+                  {isPending || isSyncing ? "Syncing…" : "System Pulse"}
+                </p>
+                <p className="text-xs text-brand-ink-500 dark:text-white/40 font-medium">
+                  Last synced:{" "}
+                  <span className="text-brand-ink-900 dark:text-white/70" suppressHydrationWarning>
+                    {lastSyncedAt.toLocaleTimeString()}
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
 
