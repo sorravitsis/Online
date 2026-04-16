@@ -367,12 +367,20 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       className="relative flex min-h-screen items-start justify-center px-6 py-12 overflow-hidden"
       onClick={refocusScannerInput}
     >
-      {/* Background — Xiaomi devices, full cover */}
+      {/* Background — ASUS notebook, bottom-right */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt=""
         aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.72] dark:opacity-[0.50]"
+        className="pointer-events-none select-none absolute -bottom-16 -right-24 w-[640px] opacity-[0.72] rotate-[-6deg]"
+        src="/asus_notebook.png"
+      />
+      {/* Background — Xiaomi devices, top-left */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute -top-10 -left-20 w-[560px] opacity-[0.72] rotate-[8deg]"
         src="/xiaomi_devices.png"
       />
 
