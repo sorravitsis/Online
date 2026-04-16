@@ -46,6 +46,15 @@ function sanitizeOrderSearchTerm(value: string) {
   return value.replace(/[,%()"'\\]/g, " ").trim();
 }
 
+export function buildBarcodeLookupFilter(value: string) {
+  const sanitized = value.replace(/[,.()"'\\]/g, "");
+  return [
+    `barcode_value.eq.${sanitized}`,
+    `platform_order_id.eq.${sanitized}`,
+    `awb_number.eq.${sanitized}`
+  ].join(",");
+}
+
 function parseDateParts(date: string) {
   const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
 
@@ -157,10 +166,7 @@ export async function listOrders(filters: ListOrdersFilters) {
   }
 
   if (filters.barcode) {
-    const sanitized = filters.barcode.replace(/[,.()"'\\]/g, "");
-    query = query.or(
-      `barcode_value.eq.${sanitized},platform_order_id.eq.${sanitized}`
-    );
+    query = query.or(buildBarcodeLookupFilter(filters.barcode));
   }
 
   if (filters.query) {
@@ -170,8 +176,8 @@ export async function listOrders(filters: ListOrdersFilters) {
         [
           `platform_order_id.ilike.%${sanitized}%`,
           `barcode_value.ilike.%${sanitized}%`,
-          `buyer_name.ilike.%${sanitized}%`,
-          `awb_number.ilike.%${sanitized}%`
+          `awb_number.ilike.%${sanitized}%`,
+          `buyer_name.ilike.%${sanitized}%`
         ].join(",")
       );
     }

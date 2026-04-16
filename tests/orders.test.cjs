@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 
 const {
+  buildBarcodeLookupFilter,
   getBangkokDateRange,
   getOrderRetentionCutoff,
   getTerminalOrderRetentionCutoff,
@@ -43,6 +44,13 @@ async function run() {
     assert.equal(isTerminalPlatformStatus("ready_to_ship"), false);
     assert.equal(normalizePlatformStatus(null), "unknown");
     assert.equal(isTerminalPlatformStatus(null), false);
+  }
+
+  {
+    assert.equal(
+      buildBarcodeLookupFilter("TH,123.45"),
+      "barcode_value.eq.TH12345,platform_order_id.eq.TH12345,awb_number.eq.TH12345"
+    );
   }
 }
 
