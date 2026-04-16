@@ -53,9 +53,10 @@ function maxDate(a: string, b: string): string {
   return a >= b ? a : b;
 }
 
-function printButtonClasses(status: string, result: "ok" | "err" | undefined) {
+function printButtonClasses(status: string, result: "ok" | "queued" | "err" | undefined) {
   const base = "flex items-center justify-center w-8 h-8 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed";
   if (result === "ok") return `${base} bg-green-100 text-green-600`;
+  if (result === "queued") return `${base} bg-blue-100 text-blue-600 hover:bg-blue-200`;
   if (result === "err") return `${base} bg-red-100 text-red-600`;
   if (status === "failed") return `${base} bg-amber-50 text-amber-600 hover:bg-amber-100`;
   return `${base} bg-brand-ink-50 dark:bg-white/[0.06] text-brand-ink-500 dark:text-white/50 hover:bg-brand-red-50 hover:text-brand-red-600`;
@@ -76,6 +77,52 @@ function badgeClasses(status: string) {
   }
 }
 
+function selectPrintIcon(isLoading: boolean, result: "ok" | "queued" | "err" | undefined, status: string) {
+  if (isLoading) {
+    return (
+      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+        <path className="opacity-75" d="M4 12a8 8 0 018-8" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+      </svg>
+    );
+  }
+  if (result === "ok") {
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7" />
+      </svg>
+    );
+  }
+  if (result === "queued") {
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+        <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+      </svg>
+    );
+  }
+  if (result === "err") {
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+        <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 9V3h12v6" />
+      <rect height="8" rx="1" width="12" x="6" y="14" />
+    </svg>
+  );
+}
+
 function PrintButton({
   isLoading,
   disabled,
@@ -85,47 +132,11 @@ function PrintButton({
 }: Readonly<{
   isLoading: boolean;
   disabled: boolean;
-  result: "ok" | "err" | undefined;
+  result: "ok" | "queued" | "err" | undefined;
   status: string;
   onPrint: () => void;
 }>) {
-  const label = status === "failed" ? "Retry print" : "Print label";
-
-  let icon: React.ReactNode;
-  if (isLoading) {
-    icon = (
-      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-        <path className="opacity-75" d="M4 12a8 8 0 018-8" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
-      </svg>
-    );
-  } else if (result === "ok") {
-    icon = (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
-        <path d="M5 13l4 4L19 7" />
-      </svg>
-    );
-  } else if (result === "err") {
-    icon = (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24">
-        <path d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    );
-  } else if (status === "failed") {
-    icon = (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
-        <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-      </svg>
-    );
-  } else {
-    icon = (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-        <path d="M6 9V3h12v6" />
-        <rect height="8" rx="1" width="12" x="6" y="14" />
-      </svg>
-    );
-  }
+  const label = result === "queued" ? "Download label" : status === "failed" ? "Retry print" : "Print label";
 
   return (
     <button
@@ -136,7 +147,7 @@ function PrintButton({
       type="button"
       onClick={onPrint}
     >
-      {icon}
+      {selectPrintIcon(isLoading, result, status)}
     </button>
   );
 }
@@ -161,7 +172,7 @@ export function OrdersDashboard({
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
-  const [printResultMap, setPrintResultMap] = useState<Record<string, "ok" | "err">>({});
+  const [printResultMap, setPrintResultMap] = useState<Record<string, "ok" | "queued" | "err">>({});
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -485,14 +496,25 @@ export function OrdersDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: rowId }),
       });
-      const ok = res.ok && (await res.json().then((j: { success?: boolean }) => j.success).catch(() => false));
-      setPrintResultMap((prev) => ({ ...prev, [rowId]: ok ? "ok" : "err" }));
-      if (ok) setTimeout(() => setPrintResultMap((prev) => { const next = { ...prev }; delete next[rowId]; return next; }), 3000);
+      const json = await res.json() as { success?: boolean; data?: { status?: string } };
+      if (!res.ok || !json.success) {
+        setPrintResultMap((prev) => ({ ...prev, [rowId]: "err" }));
+        return;
+      }
+      const resultStatus = json.data?.status === "queued" ? "queued" as const : "ok" as const;
+      setPrintResultMap((prev) => ({ ...prev, [rowId]: resultStatus }));
+      if (resultStatus === "ok") {
+        setTimeout(() => setPrintResultMap((prev) => { const next = { ...prev }; delete next[rowId]; return next; }), 3000);
+      }
     } catch {
       setPrintResultMap((prev) => ({ ...prev, [rowId]: "err" }));
     } finally {
       setPrintingOrderId(null);
     }
+  }
+
+  function handleDownloadLabel(orderId: string) {
+    window.open(`/api/print-jobs/download?orderId=${orderId}`, "_blank");
   }
 
   function handlePlatformChange(platform: Platform | undefined) {
@@ -959,13 +981,17 @@ export function OrdersDashboard({
                         </span>
                       </td>
                       <td className="py-5 px-4">
-                        {(order.awb_status === "pending" || order.awb_status === "failed") && (
+                        {(order.awb_status === "pending" || order.awb_status === "failed" || printResultMap[order.id]) && (
                           <PrintButton
                             isLoading={printingOrderId === order.id}
-                            disabled={printingOrderId !== null}
+                            disabled={printingOrderId !== null && printingOrderId !== order.id}
                             result={printResultMap[order.id]}
                             status={order.awb_status}
-                            onPrint={() => void handlePrint(order.id, order.awb_status)}
+                            onPrint={
+                              printResultMap[order.id] === "queued"
+                                ? () => handleDownloadLabel(order.id)
+                                : () => void handlePrint(order.id, order.awb_status)
+                            }
                           />
                         )}
                       </td>
