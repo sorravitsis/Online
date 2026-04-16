@@ -371,14 +371,14 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       <img
         alt=""
         aria-hidden="true"
-        className="pointer-events-none select-none absolute -bottom-16 -right-24 w-[640px] opacity-[0.07] rotate-[-6deg]"
+        className="pointer-events-none select-none absolute -bottom-16 -right-24 w-[640px] opacity-[0.50] rotate-[-6deg]"
         src="/asus_notebook.png"
       />
       {/* Background — Xiaomi devices, top-left */}
       <img
         alt=""
         aria-hidden="true"
-        className="pointer-events-none select-none absolute -top-10 -left-20 w-[560px] opacity-[0.07] rotate-[8deg]"
+        className="pointer-events-none select-none absolute -top-10 -left-20 w-[560px] opacity-[0.50] rotate-[8deg]"
         src="/xiaomi_devices.png"
       />
 
