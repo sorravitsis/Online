@@ -128,17 +128,22 @@ async function shopeeFetch<T>(path: string, options: ShopeeRequestOptions = {}) 
   return (await response.json()) as T;
 }
 
-async function shopeeBinaryFetch(path: string, options: ShopeeRequestOptions = {}) {
-  const response = await shopeeRequest(path, options);
-  return Buffer.from(await response.arrayBuffer());
-}
-
 async function shopeeDownloadDocument(path: string, options: ShopeeRequestOptions = {}) {
   const response = await shopeeRequest(path, options);
   const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const bytes = Buffer.from(await response.arrayBuffer());
 
-  if (contentType.includes("application/json")) {
-    const envelope = (await response.json()) as ShopeeResponseEnvelope;
+  const firstByte = bytes.length > 0 ? bytes[0] : 0;
+  const looksLikeJson =
+    contentType.includes("application/json") || firstByte === 0x7b /* { */ || firstByte === 0x5b /* [ */;
+
+  if (looksLikeJson) {
+    let envelope: ShopeeResponseEnvelope;
+    try {
+      envelope = JSON.parse(bytes.toString("utf8")) as ShopeeResponseEnvelope;
+    } catch {
+      throw new Error(`${path}: Shopee returned an unreadable response.`);
+    }
     assertShopeeEnvelopeSuccess(path, envelope);
 
     const failure =
@@ -148,7 +153,14 @@ async function shopeeDownloadDocument(path: string, options: ShopeeRequestOption
     throw new Error(`${path}: ${failure ?? "Shopee returned JSON instead of a label document."}`);
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const header = bytes.subarray(0, 5).toString("utf8");
+  const isPdf = header === "%PDF-";
+  const isZpl = header.startsWith("^XA") || header.startsWith("~JA");
+  if (!isPdf && !isZpl) {
+    throw new Error(`${path}: Shopee returned an unrecognized label document (${bytes.length} bytes).`);
+  }
+
+  return bytes;
 }
 
 export function parseShopeeRefreshTokenResponse(response: ShopeeRefreshResponse): ShopeeTokenSet {
@@ -699,7 +711,7 @@ async function fetchShopeeShippingDocument(
             shopId
           );
 
-          const pdf = await shopeeBinaryFetch(env.shopee.downloadShippingDocumentPath(), {
+          const pdf = await shopeeDownloadDocument(env.shopee.downloadShippingDocumentPath(), {
             body: {
               order_list: orderList
             },
