@@ -83,12 +83,38 @@ async function printPdf(tempPath) {
   });
 }
 
+function extractUpstreamMessage(buffer) {
+  try {
+    const envelope = JSON.parse(buffer.toString("utf8"));
+    const parts = [envelope?.error, envelope?.message].filter(Boolean);
+    const resultFail = envelope?.response?.result_list?.[0]?.fail_message;
+    if (resultFail) parts.push(resultFail);
+    return parts.join(" — ") || "unknown upstream error";
+  } catch {
+    return `non-JSON payload (first 80 bytes: ${JSON.stringify(buffer.subarray(0, 80).toString("utf8"))})`;
+  }
+}
+
 async function printDocument(job) {
   const buffer = Buffer.from(job.document_payload_base64, "base64");
+  const firstByte = buffer.length > 0 ? buffer[0] : 0;
+
+  if (firstByte === 0x7b /* { */ || firstByte === 0x5b /* [ */) {
+    throw new Error(`upstream returned JSON instead of a label: ${extractUpstreamMessage(buffer)}`);
+  }
 
   if (job.document_type === "zpl") {
-    await printZPL(buffer.toString("utf8"));
+    const text = buffer.toString("utf8");
+    if (!text.includes("^XA") && !text.includes("~JA")) {
+      throw new Error(`job flagged as ZPL but payload is not ZPL (${buffer.length} bytes)`);
+    }
+    await printZPL(text);
     return;
+  }
+
+  const header = buffer.subarray(0, 5).toString("utf8");
+  if (header !== "%PDF-") {
+    throw new Error(`job flagged as PDF but payload does not start with %PDF- (got ${JSON.stringify(header)}, ${buffer.length} bytes)`);
   }
 
   const tempPath = path.join(os.tmpdir(), `${job.id}-${randomUUID()}.pdf`);
