@@ -50,7 +50,7 @@ function makeDependencies() {
     enqueuePrintJob: createStub(async () => ({ id: "job-1" })),
     getPrintTransport: () => "direct_tcp",
     generateAWB: createStub(async () => ({
-      pdf: Buffer.from("pdf"),
+      pdf: Buffer.from("%PDF-1.4\nfake label\n%%EOF"),
       awbNumber: "AWB123"
     })),
     convertPdfToZpl: createStub(async () => "^XA^XZ"),

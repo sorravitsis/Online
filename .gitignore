@@ -1,6 +1,9 @@
 .next
 node_modules
 .env.local
+scripts/windows/print-agent.env.ps1
+scripts/probe-shopee-order.cjs
+logs/
 .npm-cache
 .tmp-*
 *.tgz
@@ -8,3 +11,5 @@ tsconfig.tsbuildinfo
 coverage
 dist
 *.log
+.vercel
+.env*.local

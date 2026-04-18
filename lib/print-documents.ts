@@ -27,5 +27,8 @@ export function detectPrintableDocumentType(buffer: Buffer): PrintableDocumentTy
     return "pdf";
   }
 
-  return "pdf";
+  const preview = buffer.subarray(0, 80).toString("utf8").replace(/\s+/g, " ").trim();
+  throw new Error(
+    `Label document is not a recognizable PDF or ZPL (${buffer.length} bytes). First bytes: ${preview || "<empty>"}`
+  );
 }
