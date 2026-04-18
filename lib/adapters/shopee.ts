@@ -417,22 +417,12 @@ async function waitForShopeeShippingDocumentResult(
 
     const envelopeFailure = getShopeeEnvelopeFailureMessage(resultResponse);
     if (envelopeFailure) {
-      if (isShippingDocumentShouldPrintFirstError(envelopeFailure)) {
-        readyResponse = resultResponse;
-        break;
-      }
-
       throw new Error(`get_shipping_document_result: ${envelopeFailure}`);
     }
 
     const resultItem = getShopeeResultItem(resultResponse);
     const failureMessage = getShopeeResultFailureMessage(resultItem);
     if (failureMessage) {
-      if (isShippingDocumentShouldPrintFirstError(failureMessage)) {
-        readyResponse = resultResponse;
-        break;
-      }
-
       throw new Error(`get_shipping_document_result: ${failureMessage}`);
     }
 

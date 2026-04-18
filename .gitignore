@@ -11,3 +11,5 @@ tsconfig.tsbuildinfo
 coverage
 dist
 *.log
+.vercel
+.env*.local
