@@ -53,8 +53,21 @@ function isAwbNotReadyError(message: string) {
   );
 }
 
+function isShopeeRequiresManualPrintError(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("shipping_document_should_print_first") ||
+    normalized.includes("the package should print first") ||
+    normalized.includes("should print first")
+  );
+}
+
 function encodeRetryableAwbError(message: string) {
   return `shopee_awb_not_ready::${message}`;
+}
+
+function encodeShopeeRequiresManualError(message: string) {
+  return `shopee_requires_manual::${message}`;
 }
 
 async function acquireLock(orderId: string, lockedBy: string) {
@@ -269,10 +282,12 @@ export async function processSingleOrderPrint(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "print_failed";
-    const isRetryableNotReady = isAwbNotReadyError(message);
-    logger.error("print:single:failed", { orderId: order.id, error: message, retryable: isRetryableNotReady });
+    const requiresManual = isShopeeRequiresManualPrintError(message);
+    const isRetryableNotReady = !requiresManual && isAwbNotReadyError(message);
+    const keepPending = requiresManual || isRetryableNotReady;
+    logger.error("print:single:failed", { orderId: order.id, error: message, retryable: isRetryableNotReady, requiresManual });
     await dependencies.setOrderStatus(order.id, {
-      awb_status: isRetryableNotReady ? "pending" : "failed"
+      awb_status: keepPending ? "pending" : "failed"
     });
     await dependencies.insertPrintLog({
       orderId: order.id,
@@ -284,10 +299,17 @@ export async function processSingleOrderPrint(
       error: message
     });
 
+    let encodedError = message;
+    if (requiresManual) {
+      encodedError = encodeShopeeRequiresManualError(message);
+    } else if (isRetryableNotReady) {
+      encodedError = encodeRetryableAwbError(message);
+    }
+
     return {
       orderId: order.id,
       status: "failed",
-      error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
+      error: encodedError
     };
   } finally {
     await dependencies.releaseLock(order.id);
@@ -385,10 +407,12 @@ export async function processBatchOrderPrint(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "print_failed";
-      const isRetryableNotReady = isAwbNotReadyError(message);
-      logger.error("print:batch:item_failed", { batchId, orderId: order.id, error: message, retryable: isRetryableNotReady });
+      const requiresManual = isShopeeRequiresManualPrintError(message);
+      const isRetryableNotReady = !requiresManual && isAwbNotReadyError(message);
+      const keepPending = requiresManual || isRetryableNotReady;
+      logger.error("print:batch:item_failed", { batchId, orderId: order.id, error: message, retryable: isRetryableNotReady, requiresManual });
       await dependencies.setOrderStatus(order.id, {
-        awb_status: isRetryableNotReady ? "pending" : "failed"
+        awb_status: keepPending ? "pending" : "failed"
       });
       await dependencies.insertPrintLog({
         orderId: order.id,
@@ -399,10 +423,18 @@ export async function processBatchOrderPrint(
         status: "failed",
         error: message
       });
+
+      let encodedError = message;
+      if (requiresManual) {
+        encodedError = encodeShopeeRequiresManualError(message);
+      } else if (isRetryableNotReady) {
+        encodedError = encodeRetryableAwbError(message);
+      }
+
       results.push({
         orderId: order.id,
         status: "failed",
-        error: isRetryableNotReady ? encodeRetryableAwbError(message) : message
+        error: encodedError
       });
     } finally {
       await dependencies.releaseLock(order.id);

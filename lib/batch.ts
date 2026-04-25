@@ -21,6 +21,10 @@ export function getSelectionLimit(
 }
 
 export function mapBatchError(error?: string) {
+  if (error?.startsWith("shopee_requires_manual::")) {
+    return "Order ที่เลือกบางตัวใช้ Shopee SPX Express ที่ต้องพิมพ์ผ่าน Seller Center ก่อน — กรุณาพิมพ์ผ่าน Seller Center หรือเปลี่ยน logistics channel เป็นเจ้าอื่นตอน Arrange Shipment";
+  }
+
   if (error?.startsWith("shopee_awb_not_ready::")) {
     const detail = error.slice("shopee_awb_not_ready::".length).trim();
     return detail
