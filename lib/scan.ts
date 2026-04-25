@@ -1,4 +1,8 @@
 export function mapScanError(error?: string) {
+  if (error?.startsWith("shopee_requires_manual::")) {
+    return "Order นี้ใช้ Shopee SPX Express ที่ Shopee บังคับให้พิมพ์ผ่าน Seller Center ก่อน — กรุณาพิมพ์ใบ AWB ผ่าน Seller Center โดยตรง หรือเปลี่ยน logistics channel เป็นเจ้าอื่น (เช่น Shopee Standard Express, J&T, Flash, Kerry) ตอน Arrange Shipment";
+  }
+
   if (error?.startsWith("shopee_awb_not_ready::")) {
     const detail = error.slice("shopee_awb_not_ready::".length).trim();
     return detail
