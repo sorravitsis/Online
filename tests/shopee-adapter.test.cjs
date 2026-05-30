@@ -305,6 +305,7 @@ async function run() {
     const orderId = "260413PSUU4SXU";
     const originalFetch = global.fetch;
     const fetchCalls = [];
+    let downloadCalls = 0;
 
     global.fetch = async (url) => {
       const href = typeof url === "string" ? url : url.toString();
@@ -381,6 +382,21 @@ async function run() {
       }
 
       if (href.includes("/api/v2/logistics/download_shipping_document")) {
+        downloadCalls += 1;
+
+        if (downloadCalls === 1) {
+          return new Response(
+            JSON.stringify({
+              error: "logistics.shipping_document_should_print_first",
+              message: "The package should print first."
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            }
+          );
+        }
+
         return new Response(Buffer.from("%PDF-1.4 test"), {
           status: 200,
           headers: { "content-type": "application/pdf" }

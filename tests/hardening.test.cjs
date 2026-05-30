@@ -4,7 +4,7 @@ const { isAuthorizedCronRequest } = require("../lib/cron.ts");
 const { buildLoadTestPrefix, findDuplicateAwbNumbers } = require("../lib/load-test.ts");
 
 async function run() {
-  assert.equal(isAuthorizedCronRequest(null, undefined), true);
+  assert.equal(isAuthorizedCronRequest(null, undefined), false);
   assert.equal(
     isAuthorizedCronRequest("Bearer top-secret", "top-secret"),
     true
