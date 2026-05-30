@@ -385,16 +385,7 @@ async function run() {
         downloadCalls += 1;
 
         if (downloadCalls === 1) {
-          return new Response(
-            JSON.stringify({
-              error: "logistics.shipping_document_should_print_first",
-              message: "The package should print first."
-            }),
-            {
-              status: 200,
-              headers: { "content-type": "application/json" }
-            }
-          );
+          return new Response("not ready", { status: 404 });
         }
 
         return new Response(Buffer.from("%PDF-1.4 test"), {
@@ -407,18 +398,20 @@ async function run() {
     };
 
     try {
-      const result = await shopeeAdapter.generateAWB({
-        platform_order_id: orderId,
-        store: {
-          platform: "shopee",
-          shop_id: "987654321",
-          access_token: "access-token",
-          refresh_token: "refresh-token",
-          token_expiry: new Date(Date.now() + 60_000).toISOString()
-        }
-      });
-
-      assert.equal(Buffer.isBuffer(result.pdf), true);
+      await assert.rejects(
+        () =>
+          shopeeAdapter.generateAWB({
+            platform_order_id: orderId,
+            store: {
+              platform: "shopee",
+              shop_id: "987654321",
+              access_token: "access-token",
+              refresh_token: "refresh-token",
+              token_expiry: new Date(Date.now() + 60_000).toISOString()
+            }
+          }),
+        /get_shipping_document_result: logistics\.shipping_document_should_print_first/
+      );
       assert.equal(
         fetchCalls.some((href) => href.includes("/api/v2/logistics/get_shipping_document_result")),
         true
@@ -427,6 +420,7 @@ async function run() {
         fetchCalls.some((href) => href.includes("/api/v2/logistics/download_shipping_document")),
         true
       );
+      assert.equal(downloadCalls, 1);
     } finally {
       global.fetch = originalFetch;
     }

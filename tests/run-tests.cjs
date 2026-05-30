@@ -46,6 +46,10 @@ const tests = [
   {
     name: "hardening helpers",
     run: require("./hardening.test.cjs").run
+  },
+  {
+    name: "n8n workflow invariants",
+    run: require("./n8n-workflows.test.cjs").run
   }
 ];
 
