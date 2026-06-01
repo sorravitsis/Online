@@ -53,15 +53,23 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const agentName = process.env.SHOPEE_SELLER_CENTER_AGENT_NAME || `${os.hostname()}-seller-center`;
 const intervalMs = Number.parseInt(process.env.SHOPEE_SELLER_CENTER_INTERVAL_MS || "5000", 10);
+const browserUnavailableBackoffMs = Number.parseInt(
+  process.env.SHOPEE_SELLER_CENTER_BROWSER_BACKOFF_MS || "30000",
+  10
+);
 const configPath =
   process.env.SHOPEE_SELLER_CENTER_PROFILES_PATH ||
   path.join(process.cwd(), "scripts", "windows", "shopee-seller-center-profiles.json");
-const browserExecutable = process.env.SELLER_CENTER_BROWSER_PATH || findBrowserExecutable();
+const cdpUrl =
+  process.env.SELLER_CENTER_CDP_URL || process.env.SHOPEE_SELLER_CENTER_CDP_URL || "";
+const browserExecutable = cdpUrl
+  ? ""
+  : process.env.SELLER_CENTER_BROWSER_PATH || findBrowserExecutable();
 const printerName = process.env.LOCAL_PRINTER_NAME || "";
 const sumatraPath = process.env.SUMATRA_PDF_PATH || findSumatraPdf();
 const closeAfterJob = process.env.SHOPEE_SELLER_CENTER_CLOSE_AFTER_JOB === "true";
 
-if (!browserExecutable) {
+if (!cdpUrl && !browserExecutable) {
   throw new Error("Microsoft Edge or Chrome was not found. Set SELLER_CENTER_BROWSER_PATH.");
 }
 
@@ -393,6 +401,39 @@ async function finishJob(jobId, success, errorMessage = null) {
   }
 }
 
+function isBrowserUnavailableError(message) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("failed to launch") ||
+    normalized.includes("browser was not found") ||
+    normalized.includes("eacces") ||
+    normalized.includes("enoent") ||
+    normalized.includes("econnrefused") ||
+    normalized.includes("ecanceled") ||
+    normalized.includes("target page, context or browser has been closed") ||
+    normalized.includes("seller_center_cdp_context_not_found")
+  );
+}
+
+async function requeueJob(jobId, errorMessage) {
+  const { error } = await supabase
+    .from("seller_center_jobs")
+    .update({
+      status: "queued",
+      error_msg: `automation_browser_unavailable::${errorMessage}`,
+      claimed_by: null,
+      browser_profile: null,
+      updated_at: new Date().toISOString(),
+      last_claimed_at: null,
+      processed_at: null
+    })
+    .eq("id", jobId);
+
+  if (error) {
+    throw new Error(`Unable to requeue Seller Center job: ${error.message}`);
+  }
+}
+
 function loadPlaywright() {
   try {
     return require("playwright-core");
@@ -401,7 +442,31 @@ function loadPlaywright() {
   }
 }
 
-async function openContext(chromium, profile) {
+let cdpBrowser = null;
+let cdpContext = null;
+
+async function ensureCdpContext(chromium) {
+  if (!cdpUrl) {
+    return null;
+  }
+
+  if (cdpBrowser?.isConnected() && cdpContext) {
+    return cdpContext;
+  }
+
+  cdpBrowser = await chromium.connectOverCDP(cdpUrl, {
+    timeout: 10000
+  });
+  cdpContext = cdpBrowser.contexts()[0] || null;
+
+  if (!cdpContext) {
+    throw new Error("seller_center_cdp_context_not_found");
+  }
+
+  return cdpContext;
+}
+
+async function openPersistentContext(chromium, profile) {
   await fs.mkdir(profile.userDataDir, { recursive: true });
   return chromium.launchPersistentContext(profile.userDataDir, {
     executablePath: browserExecutable,
@@ -418,13 +483,21 @@ async function openContext(chromium, profile) {
   });
 }
 
+async function openContext(chromium, profile) {
+  if (cdpUrl) {
+    return ensureCdpContext(chromium);
+  }
+
+  return openPersistentContext(chromium, profile);
+}
+
 async function runLoginMode(profiles) {
   const { chromium } = loadPlaywright();
   const contexts = [];
 
   for (const profile of profiles) {
     console.log(`[seller-center-login] opening ${profile.profileName} (${profile.storeName || profile.storeId})`);
-    const context = await openContext(chromium, profile);
+    const context = await openPersistentContext(chromium, profile);
     contexts.push(context);
     const page = context.pages()[0] || (await context.newPage());
     await page.goto(profile.sellerCenterUrl, {
@@ -447,27 +520,50 @@ async function runJob(chromium, contexts, profile, job) {
     `[seller-center-agent] claimed job ${job.id} for ${job.platform_order_id} (${profile.profileName})`
   );
 
-  let context = contexts.get(profile.profileName);
+  const contextKey = cdpUrl ? "__cdp__" : profile.profileName;
+  let context = contexts.get(contextKey);
+  let page = null;
+  let shouldClosePage = false;
 
   try {
     if (!context) {
       context = await openContext(chromium, profile);
-      contexts.set(profile.profileName, context);
+      contexts.set(contextKey, context);
     }
 
-    const page = context.pages()[0] || (await context.newPage());
+    if (cdpUrl) {
+      page = await context.newPage();
+      shouldClosePage = true;
+    } else {
+      page = context.pages()[0] || (await context.newPage());
+    }
+
     await searchOrder(page, profile, job.platform_order_id);
     await triggerPrint(page, profile, job.platform_order_id);
     await finishJob(job.id, true, null);
     console.log(`[seller-center-agent] printed ${job.platform_order_id}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "seller_center_automation_failed";
+    if (isBrowserUnavailableError(message)) {
+      await requeueJob(job.id, message);
+      contexts.delete(contextKey);
+      console.error(
+        `[seller-center-agent] browser unavailable for ${job.platform_order_id}; job requeued: ${message}`
+      );
+      await sleep(browserUnavailableBackoffMs);
+      return;
+    }
+
     await finishJob(job.id, false, message);
     console.error(`[seller-center-agent] failed ${job.platform_order_id}: ${message}`);
   } finally {
-    if (context && closeAfterJob) {
+    if (shouldClosePage && page) {
+      await page.close().catch(() => undefined);
+    }
+
+    if (context && closeAfterJob && !cdpUrl) {
       await context.close().catch(() => undefined);
-      contexts.delete(profile.profileName);
+      contexts.delete(contextKey);
     }
   }
 }
@@ -502,6 +598,17 @@ async function main() {
   while (!controller.signal.aborted) {
     let didWork = false;
 
+    if (cdpUrl) {
+      try {
+        await ensureCdpContext(chromium);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "seller_center_browser_unavailable";
+        console.error(`[seller-center-agent] Chrome CDP unavailable at ${cdpUrl}: ${message}`);
+        await sleep(browserUnavailableBackoffMs);
+        continue;
+      }
+    }
+
     for (const profile of profiles) {
       if (controller.signal.aborted) {
         break;
@@ -521,7 +628,9 @@ async function main() {
     }
   }
 
-  await Promise.all([...contexts.values()].map((context) => context.close().catch(() => undefined)));
+  if (!cdpUrl) {
+    await Promise.all([...contexts.values()].map((context) => context.close().catch(() => undefined)));
+  }
   console.log("[seller-center-agent] stopped.");
 }
 
