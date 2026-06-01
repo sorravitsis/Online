@@ -32,7 +32,14 @@ export function mapScanError(error?: string) {
   }
 }
 
-export function mapScanSuccess(status: "printed" | "queued", awbNumber: string) {
+export function mapScanSuccess(
+  status: "printed" | "queued" | "seller_center_queued",
+  awbNumber?: string
+) {
+  if (status === "seller_center_queued") {
+    return "Seller Center automation queued. The local Shopee automation agent will print it from the logged-in store profile.";
+  }
+
   if (status === "queued") {
     return `Print queued. AWB: ${awbNumber}. The warehouse print agent will complete it shortly.`;
   }

@@ -1,0 +1,28 @@
+{
+  "sellerCenterUrl": "https://seller.shopee.co.th/portal/sale/shipment?type=toship",
+  "defaultSelectors": {
+    "searchInput": "",
+    "searchButton": "",
+    "rowCheckbox": "",
+    "printButton": "",
+    "confirmButton": ""
+  },
+  "profiles": [
+    {
+      "storeId": "00000000-0000-0000-0000-000000000000",
+      "storeName": "Asus Shopee",
+      "shopId": "123456",
+      "profileName": "asus-shopee",
+      "userDataDir": "C:\\Users\\Sorravit_L\\.awb-shopee-profiles\\asus-shopee",
+      "sellerCenterUrl": "https://seller.shopee.co.th/portal/sale/shipment?type=toship",
+      "orderSearchUrlTemplate": "",
+      "selectors": {
+        "searchInput": "",
+        "searchButton": "",
+        "rowCheckbox": "",
+        "printButton": "",
+        "confirmButton": ""
+      }
+    }
+  ]
+}

@@ -48,6 +48,7 @@ function makeDependencies() {
     setOrderStatus: createStub(async () => undefined),
     insertPrintLog: createStub(async () => undefined),
     enqueuePrintJob: createStub(async () => ({ id: "job-1" })),
+    enqueueSellerCenterJob: createStub(async () => ({ id: "seller-job-1" })),
     getPrintTransport: () => "direct_tcp",
     generateAWB: createStub(async () => ({
       pdf: Buffer.from("%PDF-1.4\nfake label\n%%EOF"),
@@ -195,14 +196,12 @@ async function run() {
 
     const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
 
-    assert.equal(result.status, "failed");
-    assert.match(
-      result.error,
-      /^shopee_awb_not_ready::get_shipping_document_result: logistics\.shipping_document_should_print_first/
-    );
+    assert.equal(result.status, "seller_center_queued");
+    assert.equal(dependencies.enqueueSellerCenterJob.calls.length, 1);
+    assert.equal(dependencies.insertPrintLog.calls.length, 0);
     assert.equal(
       dependencies.setOrderStatus.calls.some(
-        ([, payload]) => payload && payload.awb_status === "pending"
+        ([, payload]) => payload && payload.awb_status === "printing"
       ),
       true
     );

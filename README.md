@@ -109,6 +109,37 @@ Behavior in local queue mode:
 - the local Windows agent claims the job, prints it through the local driver, and finalizes `orders` + `print_log`
 - failed local prints move the order to `failed` without marking it as printed
 
+## Shopee Seller Center Automation Fallback
+
+Some Shopee logistics channels return `shipping_document_should_print_first` from Open API. For those orders the web app now queues a Seller Center automation job instead of failing the scan.
+
+1. Run [supabase/migrations/005_seller_center_automation_queue.sql](./supabase/migrations/005_seller_center_automation_queue.sql) in Supabase.
+2. Keep `PRINT_TRANSPORT=local_queue` enabled for normal label printing.
+3. On the warehouse Windows PC, generate one browser profile per active Shopee store:
+
+```bash
+npm run seller-center:profiles
+```
+
+4. Log in once for each profile:
+
+```bash
+npm run seller-center:login
+```
+
+5. Start the automation worker:
+
+```bash
+npm run seller-center:agent
+```
+
+The generated profile file is `scripts/windows/shopee-seller-center-profiles.json` and is intentionally ignored by git. Each profile maps one `stores.id` to one persistent Edge/Chrome user data directory, so 12 Shopee stores can stay logged in separately on the same PC.
+
+Optional selector tuning lives in that JSON file:
+
+- `orderSearchUrlTemplate` can contain `{orderSn}` if Shopee supports a search URL for the current Seller Center page.
+- `selectors.searchInput`, `selectors.searchButton`, `selectors.rowCheckbox`, `selectors.printButton`, and `selectors.confirmButton` can be filled if Shopee changes the UI and the fallback text matching is not enough.
+
 ## Still Requires Real-World Validation
 
 These steps cannot be completed from the repo alone:

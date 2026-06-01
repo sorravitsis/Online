@@ -53,10 +53,13 @@ function maxDate(a: string, b: string): string {
   return a >= b ? a : b;
 }
 
-function printButtonClasses(status: string, result: "ok" | "queued" | "err" | undefined) {
+type PrintButtonResult = "ok" | "queued" | "automation" | "err";
+
+function printButtonClasses(status: string, result: PrintButtonResult | undefined) {
   const base = "flex items-center justify-center w-8 h-8 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed";
   if (result === "ok") return `${base} bg-green-100 text-green-600`;
   if (result === "queued") return `${base} bg-blue-100 text-blue-600 hover:bg-blue-200`;
+  if (result === "automation") return `${base} bg-amber-100 text-amber-700`;
   if (result === "err") return `${base} bg-red-100 text-red-600`;
   if (status === "failed") return `${base} bg-amber-50 text-amber-600 hover:bg-amber-100`;
   return `${base} bg-brand-ink-50 dark:bg-white/[0.06] text-brand-ink-500 dark:text-white/50 hover:bg-brand-red-50 hover:text-brand-red-600`;
@@ -77,7 +80,7 @@ function badgeClasses(status: string) {
   }
 }
 
-function selectPrintIcon(isLoading: boolean, result: "ok" | "queued" | "err" | undefined, status: string) {
+function selectPrintIcon(isLoading: boolean, result: PrintButtonResult | undefined, status: string) {
   if (isLoading) {
     return (
       <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -97,6 +100,15 @@ function selectPrintIcon(isLoading: boolean, result: "ok" | "queued" | "err" | u
     return (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
         <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+      </svg>
+    );
+  }
+  if (result === "automation") {
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+        <path d="M12 6v6l4 2" />
+        <path d="M21 12a9 9 0 1 1-3-6.708" />
+        <path d="M21 3v6h-6" />
       </svg>
     );
   }
@@ -132,11 +144,18 @@ function PrintButton({
 }: Readonly<{
   isLoading: boolean;
   disabled: boolean;
-  result: "ok" | "queued" | "err" | undefined;
+  result: PrintButtonResult | undefined;
   status: string;
   onPrint: () => void;
 }>) {
-  const label = result === "queued" ? "Download label" : status === "failed" ? "Retry print" : "Print label";
+  const label =
+    result === "queued"
+      ? "Download label"
+      : result === "automation"
+        ? "Seller Center automation queued"
+        : status === "failed"
+          ? "Retry print"
+          : "Print label";
 
   return (
     <button
@@ -172,7 +191,7 @@ export function OrdersDashboard({
   const [flashOrderId, setFlashOrderId] = useState<string | null>(null);
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null);
-  const [printResultMap, setPrintResultMap] = useState<Record<string, "ok" | "queued" | "err">>({});
+  const [printResultMap, setPrintResultMap] = useState<Record<string, PrintButtonResult>>({});
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date());
   const [lazadaSyncing, setLazadaSyncing] = useState(false);
@@ -502,7 +521,12 @@ export function OrdersDashboard({
         setPrintResultMap((prev) => ({ ...prev, [rowId]: "err" }));
         return;
       }
-      const resultStatus = json.data?.status === "queued" ? "queued" as const : "ok" as const;
+      const resultStatus =
+        json.data?.status === "queued"
+          ? "queued"
+          : json.data?.status === "seller_center_queued"
+            ? "automation"
+            : "ok";
       setPrintResultMap((prev) => ({ ...prev, [rowId]: resultStatus }));
       if (resultStatus === "ok") {
         setTimeout(() => setPrintResultMap((prev) => { const next = { ...prev }; delete next[rowId]; return next; }), 3000);
@@ -1027,7 +1051,10 @@ export function OrdersDashboard({
                         {(order.awb_status === "pending" || order.awb_status === "failed" || printResultMap[order.id]) && (
                           <PrintButton
                             isLoading={printingOrderId === order.id}
-                            disabled={printingOrderId !== null && printingOrderId !== order.id}
+                            disabled={
+                              (printingOrderId !== null && printingOrderId !== order.id) ||
+                              printResultMap[order.id] === "automation"
+                            }
                             result={printResultMap[order.id]}
                             status={order.awb_status}
                             onPrint={

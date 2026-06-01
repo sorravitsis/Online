@@ -12,14 +12,25 @@ type ScanMode = "single" | "bulk";
 
 type QueuedOrder = {
   order: OrderWithStore;
-  printStatus: "queued" | "printing" | "printed" | "failed" | "printer_queue";
+  printStatus:
+    | "queued"
+    | "printing"
+    | "printed"
+    | "failed"
+    | "printer_queue"
+    | "seller_center_queue";
   awbNumber?: string;
   error?: string;
 };
 
 type SingleResult =
   | { kind: "idle" }
-  | { kind: "success"; awbNumber: string; order: OrderWithStore; status: "printed" | "queued" }
+  | {
+      kind: "success";
+      awbNumber?: string;
+      order: OrderWithStore;
+      status: "printed" | "queued" | "seller_center_queued";
+    }
   | { kind: "already_printed"; order: OrderWithStore; awbNumber?: string }
   | { kind: "locked"; order: OrderWithStore }
   | { kind: "error"; message: string };
@@ -58,6 +69,7 @@ function applyBatchResults(
     if (!hit) return q;
     if (hit.status === "printed") return { ...q, printStatus: "printed", awbNumber: hit.awbNumber };
     if (hit.status === "queued") return { ...q, printStatus: "printer_queue", awbNumber: hit.awbNumber };
+    if (hit.status === "seller_center_queued") return { ...q, printStatus: "seller_center_queue" };
     return { ...q, printStatus: "failed", error: hit.error };
   });
 }
@@ -210,7 +222,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
       });
       const json = await readJsonResponse<{
         success: boolean;
-        data?: { awbNumber?: string; status?: "printed" | "queued" };
+        data?: { awbNumber?: string; status?: "printed" | "queued" | "seller_center_queued" };
         error?: string;
       }>(response);
 
@@ -218,12 +230,13 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
         setSingleResult({ kind: "error", message: mapScanError(json.error) });
         return;
       }
+      const status = json.data?.status ?? "printed";
       const awbNumber = json.data?.awbNumber;
-      if (!awbNumber) {
+      if (status !== "seller_center_queued" && !awbNumber) {
         setSingleResult({ kind: "error", message: "The print API did not return an AWB number." });
         return;
       }
-      setSingleResult({ kind: "success", awbNumber, order, status: json.data?.status ?? "printed" });
+      setSingleResult({ kind: "success", awbNumber, order, status });
       setBarcode("");
     } catch (error) {
       setSingleResult({ kind: "error", message: error instanceof Error ? error.message : "Unexpected scan error." });
@@ -359,7 +372,11 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
   }
 
   const queuedCount = queue.filter((q) => q.printStatus === "queued").length;
-  const printedCount = queue.filter((q) => q.printStatus === "printed" || q.printStatus === "printer_queue").length;
+  const printedCount = queue.filter((q) =>
+    q.printStatus === "printed" ||
+    q.printStatus === "printer_queue" ||
+    q.printStatus === "seller_center_queue"
+  ).length;
   const failedCount = queue.filter((q) => q.printStatus === "failed").length;
 
   return (
@@ -682,6 +699,8 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                   <p className="mt-2 text-sm text-emerald-800">
                     {singleResult.status === "queued"
                       ? `${singleResult.order.platform_order_id} is waiting for the local printer agent.`
+                      : singleResult.status === "seller_center_queued"
+                        ? `${singleResult.order.platform_order_id} is waiting for Seller Center automation.`
                       : `${singleResult.order.platform_order_id} is ready for packing.`}
                   </p>
                 </div>
@@ -734,7 +753,7 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
               <div className="mb-4 flex gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-3 text-sm">
                 <span className="font-semibold text-emerald-700">Batch done</span>
                 {printedCount > 0 && (
-                  <span className="text-emerald-700">{printedCount} printed</span>
+                  <span className="text-emerald-700">{printedCount} sent</span>
                 )}
                 {failedCount > 0 && (
                   <span className="font-semibold text-brand-red-600">{failedCount} failed</span>
@@ -809,6 +828,11 @@ export function ScanDashboard({ stores }: ScanDashboardProps) {
                           {q.printStatus === "printer_queue" && (
                             <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-600">
                               Printer queue
+                            </span>
+                          )}
+                          {q.printStatus === "seller_center_queue" && (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                              Seller Center queue
                             </span>
                           )}
                           {q.printStatus === "failed" && (

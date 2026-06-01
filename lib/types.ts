@@ -4,7 +4,7 @@ export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue
 export type Platform = "shopee" | "lazada";
 export type OrderStatus = "pending" | "printing" | "printed" | "failed";
 export type PrintMode = "1to1" | "batch";
-export type PrintResultStatus = "printed" | "queued" | "failed";
+export type PrintResultStatus = "printed" | "queued" | "seller_center_queued" | "failed";
 export type PrintableDocumentType = "pdf" | "zpl";
 
 export type StoreRow = {
@@ -67,6 +67,33 @@ export type PrintJobRow = {
   claimed_by: string | null;
   created_at: string;
   updated_at: string;
+  processed_at: string | null;
+};
+
+export type SellerCenterJobStatus =
+  | "queued"
+  | "processing"
+  | "printed"
+  | "failed"
+  | "login_required";
+
+export type SellerCenterJobRow = {
+  id: string;
+  order_id: string;
+  store_id: string;
+  platform_order_id: string;
+  batch_id: string | null;
+  mode: PrintMode;
+  batch_size: number | null;
+  status: SellerCenterJobStatus;
+  error_msg: string | null;
+  requested_by: string | null;
+  claimed_by: string | null;
+  browser_profile: string | null;
+  attempt_count: number;
+  created_at: string;
+  updated_at: string;
+  last_claimed_at: string | null;
   processed_at: string | null;
 };
 

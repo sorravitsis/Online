@@ -28,11 +28,12 @@ async function run() {
     summarizeBatchResults([
       { orderId: "1", status: "printed" },
       { orderId: "3", status: "queued" },
+      { orderId: "4", status: "seller_center_queued" },
       { orderId: "2", status: "failed", error: "locked" }
     ]),
     {
       printed: 1,
-      queued: 1,
+      queued: 2,
       failed: 1
     }
   );

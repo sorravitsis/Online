@@ -9,6 +9,9 @@
     "lint": "next lint",
     "test": "node --require ./tests/helpers/register-ts.cjs ./tests/run-tests.cjs",
     "print:agent": "node --require ./tests/helpers/register-ts.cjs ./scripts/local-print-agent.cjs",
+    "seller-center:profiles": "node ./scripts/generate-seller-center-profiles.cjs",
+    "seller-center:login": "node ./scripts/seller-center-agent.cjs --login",
+    "seller-center:agent": "node ./scripts/seller-center-agent.cjs",
     "preflight": "npm exec tsc --noEmit && npm test && npm run build",
     "seed:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/seed-load-test.cjs",
     "verify:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/verify-load-test.cjs"
@@ -20,6 +23,7 @@
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
     "next": "^14.2.0",
+    "playwright-core": "^1.54.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.24.2"

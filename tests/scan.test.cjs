@@ -28,6 +28,10 @@ async function run() {
     "Print queued. AWB: AWB123. The warehouse print agent will complete it shortly."
   );
   assert.equal(
+    mapScanSuccess("seller_center_queued"),
+    "Seller Center automation queued. The local Shopee automation agent will print it from the logged-in store profile."
+  );
+  assert.equal(
     summarizeItems([{ name: "SKU 1" }, { name: "SKU 2" }, { name: "SKU 3" }]),
     "SKU 1 +2 more"
   );

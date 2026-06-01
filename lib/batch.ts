@@ -58,7 +58,9 @@ export function mapBatchError(error?: string) {
 
 export function summarizeBatchResults(results: PrintResult[]) {
   const printed = results.filter((result) => result.status === "printed").length;
-  const queued = results.filter((result) => result.status === "queued").length;
+  const queued = results.filter(
+    (result) => result.status === "queued" || result.status === "seller_center_queued"
+  ).length;
   const failed = results.filter((result) => result.status === "failed").length;
 
   return {

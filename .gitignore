@@ -2,6 +2,7 @@
 node_modules
 .env.local
 scripts/windows/print-agent.env.ps1
+scripts/windows/shopee-seller-center-profiles.json
 scripts/probe-shopee-order.cjs
 logs/
 .npm-cache

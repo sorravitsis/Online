@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import { env, LOCK_TTL_SECONDS } from "@/lib/env";
 import { detectPrintableDocumentType } from "@/lib/print-documents";
 import { enqueuePrintJob } from "@/lib/print-jobs";
+import {
+  enqueueSellerCenterJob,
+  isShopeeSellerCenterFallbackError
+} from "@/lib/seller-center-jobs";
 import { addSeconds } from "@/lib/time";
 import { generateAWB } from "@/lib/awb";
 import { convertPdfToZpl } from "@/lib/labelary";
@@ -35,6 +39,7 @@ export type PrintWorkflowDependencies = {
     error?: string;
   }) => Promise<void>;
   enqueuePrintJob: typeof enqueuePrintJob;
+  enqueueSellerCenterJob: typeof enqueueSellerCenterJob;
   getPrintTransport: () => "direct_tcp" | "local_queue";
   generateAWB: typeof generateAWB;
   convertPdfToZpl: typeof convertPdfToZpl;
@@ -46,7 +51,6 @@ function isAwbNotReadyError(message: string) {
   return (
     normalized.includes("create_shipping_document: the tracking number is invalid") ||
     normalized.includes("get_shipping_document_result: the tracking number is invalid") ||
-    normalized.includes("shipping_document_should_print_first") ||
     normalized.includes("package can not print now") ||
     normalized.includes("document is not yet ready for printing") ||
     normalized.includes("please try again later") ||
@@ -156,6 +160,7 @@ const defaultDependencies: PrintWorkflowDependencies = {
   setOrderStatus,
   insertPrintLog,
   enqueuePrintJob,
+  enqueueSellerCenterJob,
   getPrintTransport: () => env.printer.transport(),
   generateAWB,
   convertPdfToZpl,
@@ -197,6 +202,25 @@ async function queuePrintJob(
     printedBy,
     documentType,
     documentBuffer: awb.pdf
+  });
+}
+
+async function queueSellerCenterAutomationJob(
+  order: OrderWithStore,
+  batchId: string | null,
+  batchSize: number | null,
+  printedBy: string,
+  mode: PrintMode,
+  error: string,
+  dependencies: PrintWorkflowDependencies
+) {
+  await dependencies.enqueueSellerCenterJob({
+    order,
+    batchId,
+    batchSize,
+    mode,
+    requestedBy: printedBy,
+    error
   });
 }
 
@@ -284,6 +308,23 @@ export async function processSingleOrderPrint(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "print_failed";
+    if (isShopeeSellerCenterFallbackError(message)) {
+      await queueSellerCenterAutomationJob(
+        order,
+        null,
+        null,
+        printedBy,
+        "1to1",
+        message,
+        dependencies
+      );
+      logger.info("print:single:seller_center_queued", { orderId: order.id });
+      return {
+        orderId: order.id,
+        status: "seller_center_queued"
+      };
+    }
+
     const requiresManual = isShopeeRequiresManualPrintError(message);
     const isRetryableNotReady = !requiresManual && isAwbNotReadyError(message);
     const keepPending = requiresManual || isRetryableNotReady;
@@ -409,6 +450,27 @@ export async function processBatchOrderPrint(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "print_failed";
+      if (isShopeeSellerCenterFallbackError(message)) {
+        await queueSellerCenterAutomationJob(
+          order,
+          batchId,
+          orderIds.length,
+          printedBy,
+          "batch",
+          message,
+          dependencies
+        );
+        logger.info("print:batch:item_seller_center_queued", {
+          batchId,
+          orderId: order.id
+        });
+        results.push({
+          orderId: order.id,
+          status: "seller_center_queued"
+        });
+        continue;
+      }
+
       const requiresManual = isShopeeRequiresManualPrintError(message);
       const isRetryableNotReady = !requiresManual && isAwbNotReadyError(message);
       const keepPending = requiresManual || isRetryableNotReady;
