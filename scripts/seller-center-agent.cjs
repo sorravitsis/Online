@@ -409,6 +409,8 @@ async function openContext(chromium, profile) {
     acceptDownloads: true,
     args: [
       "--kiosk-printing",
+      "--disable-crash-reporter",
+      "--disable-crashpad",
       "--disable-features=Translate",
       "--no-first-run",
       "--disable-default-apps"
@@ -441,18 +443,19 @@ async function runLoginMode(profiles) {
 }
 
 async function runJob(chromium, contexts, profile, job) {
-  let context = contexts.get(profile.profileName);
-  if (!context) {
-    context = await openContext(chromium, profile);
-    contexts.set(profile.profileName, context);
-  }
-
-  const page = context.pages()[0] || (await context.newPage());
   console.log(
     `[seller-center-agent] claimed job ${job.id} for ${job.platform_order_id} (${profile.profileName})`
   );
 
+  let context = contexts.get(profile.profileName);
+
   try {
+    if (!context) {
+      context = await openContext(chromium, profile);
+      contexts.set(profile.profileName, context);
+    }
+
+    const page = context.pages()[0] || (await context.newPage());
     await searchOrder(page, profile, job.platform_order_id);
     await triggerPrint(page, profile, job.platform_order_id);
     await finishJob(job.id, true, null);
@@ -462,7 +465,7 @@ async function runJob(chromium, contexts, profile, job) {
     await finishJob(job.id, false, message);
     console.error(`[seller-center-agent] failed ${job.platform_order_id}: ${message}`);
   } finally {
-    if (closeAfterJob) {
+    if (context && closeAfterJob) {
       await context.close().catch(() => undefined);
       contexts.delete(profile.profileName);
     }
