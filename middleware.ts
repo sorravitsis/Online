@@ -10,8 +10,10 @@ const PUBLIC_PATHS = new Set([
   "/api/admin/lazada/callback"
 ]);
 
-// DEV ONLY: Set to true to bypass auth and go directly to Orders Dashboard
-const DEV_BYPASS_AUTH = true;
+// DEV ONLY: Set DEV_BYPASS_AUTH=true to bypass page auth locally.
+// API print routes still require a real session so production cannot silently
+// enter the dashboard without a valid awb_session cookie.
+const DEV_BYPASS_AUTH = process.env.DEV_BYPASS_AUTH === "true";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

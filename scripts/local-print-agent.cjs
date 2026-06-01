@@ -1,4 +1,5 @@
 const fs = require("node:fs/promises");
+const fsSync = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
@@ -6,13 +7,65 @@ const { randomUUID } = require("node:crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { printZPL } = require("../lib/print.ts");
 
+function loadEnvFile(filePath) {
+  if (!fsSync.existsSync(filePath)) {
+    return;
+  }
+
+  const content = fsSync.readFileSync(filePath, "utf8");
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    let value = line.slice(separatorIndex + 1).trim();
+
+    const commentIndex = value.search(/\s#/);
+    if (commentIndex !== -1) {
+      value = value.slice(0, commentIndex).trim();
+    }
+
+    if (
+      (value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadEnvFile(path.join(process.cwd(), ".env.local"));
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const agentName = process.env.LOCAL_PRINT_AGENT_NAME || os.hostname();
 const printerName = process.env.LOCAL_PRINTER_NAME || "";
+const printerQueue =
+  process.env.LOCAL_PRINTER_QUEUE_NAME || process.env.PRINT_QUEUE_NAME || printerName || "";
 const intervalMs = Number.parseInt(process.env.PRINT_AGENT_INTERVAL_MS || "3000", 10);
-const sumatraPath = process.env.SUMATRA_PDF_PATH || "";
+const sumatraPath = process.env.SUMATRA_PDF_PATH || findSumatraPdf();
 const pdfPrintCommand = process.env.PDF_PRINT_COMMAND || "";
+
+function findSumatraPdf() {
+  const candidates = [
+    path.join(process.env.LOCALAPPDATA || "", "SumatraPDF", "SumatraPDF.exe"),
+    "C:\\Program Files\\SumatraPDF\\SumatraPDF.exe",
+    "C:\\Program Files (x86)\\SumatraPDF\\SumatraPDF.exe"
+  ];
+
+  return candidates.find((candidate) => candidate && fsSync.existsSync(candidate)) || "";
+}
 
 if (!supabaseUrl || !serviceRoleKey) {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
@@ -130,7 +183,8 @@ async function printDocument(job) {
 async function claimNextJob() {
   const { data, error } = await supabase.rpc("claim_next_print_job", {
     p_agent_name: agentName,
-    p_printer_name: printerName || null
+    p_printer_name: printerName || null,
+    p_printer_queue: printerQueue || null
   });
 
   if (error) {
@@ -162,7 +216,10 @@ async function runOnce() {
     return false;
   }
 
-  console.log(`[print-agent] claimed job ${job.id} (${job.document_type}) for order ${job.order_id}`);
+  console.log(
+    `[print-agent] claimed job ${job.id} (${job.document_type}) for order ${job.order_id}` +
+      `${job.printer_queue ? ` from queue ${job.printer_queue}` : ""}`
+  );
 
   try {
     await printDocument(job);
@@ -178,7 +235,11 @@ async function runOnce() {
 }
 
 async function main() {
-  console.log(`[print-agent] started as ${agentName}${printerName ? ` on ${printerName}` : ""}`);
+  console.log(
+    `[print-agent] started as ${agentName}` +
+      `${printerQueue ? ` for queue ${printerQueue}` : " for any queue"}` +
+      `${printerName ? ` on ${printerName}` : ""}`
+  );
 
   const controller = new AbortController();
   const { signal } = controller;

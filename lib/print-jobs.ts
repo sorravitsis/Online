@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase";
+import { env } from "@/lib/env";
 import type { PrintJobRow, PrintMode, PrintableDocumentType } from "@/lib/types";
 
 export async function enqueuePrintJob(input: {
@@ -23,7 +24,8 @@ export async function enqueuePrintJob(input: {
       status: "queued",
       document_type: input.documentType,
       document_payload_base64: input.documentBuffer.toString("base64"),
-      printed_by: input.printedBy
+      printed_by: input.printedBy,
+      printer_queue: env.printer.queueName() ?? null
     })
     .select("*")
     .single();

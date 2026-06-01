@@ -304,9 +304,12 @@ async function run() {
 
     const orderId = "260413PSUU4SXU";
     const originalFetch = global.fetch;
+    const originalSetTimeout = global.setTimeout;
     const fetchCalls = [];
     let downloadCalls = 0;
+    let resultCalls = 0;
 
+    global.setTimeout = (callback, _ms, ...args) => originalSetTimeout(callback, 0, ...args);
     global.fetch = async (url) => {
       const href = typeof url === "string" ? url : url.toString();
       fetchCalls.push(href);
@@ -361,6 +364,8 @@ async function run() {
       }
 
       if (href.includes("/api/v2/logistics/get_shipping_document_result")) {
+        resultCalls += 1;
+
         return new Response(
           JSON.stringify({
             error: "logistics.shipping_document_should_print_first",
@@ -398,20 +403,19 @@ async function run() {
     };
 
     try {
-      await assert.rejects(
-        () =>
-          shopeeAdapter.generateAWB({
-            platform_order_id: orderId,
-            store: {
-              platform: "shopee",
-              shop_id: "987654321",
-              access_token: "access-token",
-              refresh_token: "refresh-token",
-              token_expiry: new Date(Date.now() + 60_000).toISOString()
-            }
-          }),
-        /get_shipping_document_result: logistics\.shipping_document_should_print_first/
-      );
+      const result = await shopeeAdapter.generateAWB({
+        platform_order_id: orderId,
+        store: {
+          platform: "shopee",
+          shop_id: "987654321",
+          access_token: "access-token",
+          refresh_token: "refresh-token",
+          token_expiry: new Date(Date.now() + 60_000).toISOString()
+        }
+      });
+
+      assert.equal(result.awbNumber, orderId);
+      assert.equal(Buffer.isBuffer(result.pdf), true);
       assert.equal(
         fetchCalls.some((href) => href.includes("/api/v2/logistics/get_shipping_document_result")),
         true
@@ -420,9 +424,11 @@ async function run() {
         fetchCalls.some((href) => href.includes("/api/v2/logistics/download_shipping_document")),
         true
       );
-      assert.equal(downloadCalls, 1);
+      assert.equal(resultCalls, 1);
+      assert.equal(downloadCalls, 2);
     } finally {
       global.fetch = originalFetch;
+      global.setTimeout = originalSetTimeout;
     }
   }
 }

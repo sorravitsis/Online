@@ -184,6 +184,35 @@ async function run() {
       false
     );
   }
+
+  {
+    const dependencies = makeDependencies();
+    dependencies.generateAWB = createStub(async () => {
+      throw new Error(
+        "get_shipping_document_result: logistics.shipping_document_should_print_first: The package should print first."
+      );
+    });
+
+    const result = await processSingleOrderPrint("order-1", "session-1", dependencies);
+
+    assert.equal(result.status, "failed");
+    assert.match(
+      result.error,
+      /^shopee_awb_not_ready::get_shipping_document_result: logistics\.shipping_document_should_print_first/
+    );
+    assert.equal(
+      dependencies.setOrderStatus.calls.some(
+        ([, payload]) => payload && payload.awb_status === "pending"
+      ),
+      true
+    );
+    assert.equal(
+      dependencies.setOrderStatus.calls.some(
+        ([, payload]) => payload && payload.awb_status === "failed"
+      ),
+      false
+    );
+  }
 }
 
 module.exports = { run };

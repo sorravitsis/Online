@@ -40,6 +40,7 @@ type ShopeeOrderListItem = {
   order_sn: string;
   package_number?: string;
   shipping_document_type?: string;
+  tracking_number?: string;
 };
 
 class ShopeeHttpError extends Error {
@@ -314,6 +315,7 @@ function isRetryableDocumentNotReadyError(message: string | undefined) {
   const normalized = message.toLowerCase();
   return (
     isExistingDocumentCreateError(normalized) ||
+    isShippingDocumentShouldPrintFirstError(normalized) ||
     normalized.includes("package can not print now") ||
     normalized.includes("document is not yet ready for printing") ||
     normalized.includes("please try again later")
@@ -379,6 +381,7 @@ function buildShopeeOrderList(
   options?: {
     packageNumber?: string;
     shippingDocumentType?: string;
+    trackingNumber?: string;
   }
 ): ShopeeOrderListItem[] {
   return [
@@ -387,7 +390,8 @@ function buildShopeeOrderList(
       ...(options?.packageNumber ? { package_number: options.packageNumber } : {}),
       ...(options?.shippingDocumentType
         ? { shipping_document_type: options.shippingDocumentType }
-        : {})
+        : {}),
+      ...(options?.trackingNumber ? { tracking_number: options.trackingNumber } : {})
     }
   ];
 }
@@ -653,6 +657,12 @@ async function fetchShopeeShippingDocument(
         });
 
         try {
+          const createOrderList = buildShopeeOrderList(orderId, {
+            packageNumber,
+            shippingDocumentType,
+            trackingNumber
+          });
+
           try {
             const existingPdf = await shopeeDownloadDocument(
               env.shopee.downloadShippingDocumentPath(),
@@ -678,7 +688,7 @@ async function fetchShopeeShippingDocument(
             env.shopee.createShippingDocumentPath(),
             {
               body: {
-                order_list: orderList
+                order_list: createOrderList
               },
               accessToken,
               shopId

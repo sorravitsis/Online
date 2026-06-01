@@ -46,6 +46,7 @@ function isAwbNotReadyError(message: string) {
   return (
     normalized.includes("create_shipping_document: the tracking number is invalid") ||
     normalized.includes("get_shipping_document_result: the tracking number is invalid") ||
+    normalized.includes("shipping_document_should_print_first") ||
     normalized.includes("package can not print now") ||
     normalized.includes("document is not yet ready for printing") ||
     normalized.includes("please try again later") ||
@@ -56,9 +57,10 @@ function isAwbNotReadyError(message: string) {
 function isShopeeRequiresManualPrintError(message: string) {
   const normalized = message.toLowerCase();
   return (
-    normalized.includes("shipping_document_should_print_first") ||
-    normalized.includes("the package should print first") ||
-    normalized.includes("should print first")
+    normalized.includes("can_not_print_jit_order") ||
+    normalized.includes("only supports document printing in shopee seller center") ||
+    normalized.includes("print in shopee seller center") ||
+    normalized.includes("seller center instead")
   );
 }
 

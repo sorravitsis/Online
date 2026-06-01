@@ -75,10 +75,10 @@ Optional overrides:
 
 Use this mode when the warehouse printer is attached to a Windows PC by USB and cannot accept raw TCP ZPL from Vercel.
 
-1. Run [supabase/migrations/002_print_jobs_queue.sql](./supabase/migrations/002_print_jobs_queue.sql) in Supabase.
-2. Set `PRINT_TRANSPORT=local_queue` in Vercel.
+1. Run [supabase/migrations/002_print_jobs_queue.sql](./supabase/migrations/002_print_jobs_queue.sql) and [supabase/migrations/004_print_job_printer_queues.sql](./supabase/migrations/004_print_job_printer_queues.sql) in Supabase.
+2. Set `PRINT_TRANSPORT=local_queue` and `PRINT_QUEUE_NAME=awb-main` in Vercel.
 3. Push and redeploy `main`.
-4. On the warehouse Windows PC, pull the repo and run:
+4. On each warehouse Windows PC, pull the repo and run:
 
 ```bash
 npm install
@@ -90,7 +90,8 @@ Recommended agent env vars on the warehouse PC:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `PRINT_TRANSPORT=local_queue`
-- `LOCAL_PRINT_AGENT_NAME=warehouse-deli-01`
+- `LOCAL_PRINT_AGENT_NAME=warehouse-deli-01` (unique per PC)
+- `LOCAL_PRINTER_QUEUE_NAME=awb-main`
 - `LOCAL_PRINTER_NAME=<Windows printer name>`
 - `PRINT_AGENT_INTERVAL_MS=3000`
 
@@ -103,6 +104,8 @@ Behavior in local queue mode:
 
 - the web app still acquires the order lock and generates the AWB
 - the app stores a `print_jobs` row and keeps the order in `printing`
+- agents with the same `LOCAL_PRINTER_QUEUE_NAME` share the same queue and use row locks so only one PC prints each job
+- different printer groups use different queue names, for example `awb-main`, `awb-backup`, or `awb-pack-a`
 - the local Windows agent claims the job, prints it through the local driver, and finalizes `orders` + `print_log`
 - failed local prints move the order to `failed` without marking it as printed
 

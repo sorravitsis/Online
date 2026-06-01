@@ -62,6 +62,7 @@ export type PrintJobRow = {
   document_payload_base64: string;
   error_msg: string | null;
   printed_by: string | null;
+  printer_queue: string | null;
   printer_name: string | null;
   claimed_by: string | null;
   created_at: string;
