@@ -62,6 +62,7 @@ const configPath =
   path.join(process.cwd(), "scripts", "windows", "shopee-seller-center-profiles.json");
 const cdpUrl =
   process.env.SELLER_CENTER_CDP_URL || process.env.SHOPEE_SELLER_CENTER_CDP_URL || "";
+const cdpLaunchCommand = cdpUrl ? process.env.SELLER_CENTER_CDP_LAUNCH_COMMAND || defaultCdpLaunchCommand() : "";
 const browserExecutable = cdpUrl
   ? ""
   : process.env.SELLER_CENTER_BROWSER_PATH || findBrowserExecutable();
@@ -119,6 +120,21 @@ function findSumatraPdf() {
   ];
 
   return candidates.find((candidate) => candidate && fsSync.existsSync(candidate)) || "";
+}
+
+function defaultCdpLaunchCommand() {
+  if (process.platform !== "win32") {
+    return "";
+  }
+
+  const candidate = path.join(
+    process.cwd(),
+    "scripts",
+    "windows",
+    "start-chrome-seller-center-debug.cmd"
+  );
+
+  return fsSync.existsSync(candidate) ? candidate : "";
 }
 
 function sleep(ms) {
@@ -444,6 +460,7 @@ function loadPlaywright() {
 
 let cdpBrowser = null;
 let cdpContext = null;
+let lastCdpLaunchAttemptAt = 0;
 
 async function ensureCdpContext(chromium) {
   if (!cdpUrl) {
@@ -489,6 +506,31 @@ async function openContext(chromium, profile) {
   }
 
   return openPersistentContext(chromium, profile);
+}
+
+async function tryLaunchCdpBrowser() {
+  if (!cdpLaunchCommand) {
+    return;
+  }
+
+  const now = Date.now();
+  if (now - lastCdpLaunchAttemptAt < browserUnavailableBackoffMs) {
+    return;
+  }
+
+  lastCdpLaunchAttemptAt = now;
+  console.error(`[seller-center-agent] trying Chrome CDP launch helper: ${cdpLaunchCommand}`);
+
+  if (process.platform === "win32" && cdpLaunchCommand.toLowerCase().endsWith(".cmd")) {
+    await runProcess("cmd.exe", ["/c", cdpLaunchCommand], {
+      windowsHide: true
+    });
+    return;
+  }
+
+  await runProcess(cdpLaunchCommand, [], {
+    windowsHide: true
+  });
 }
 
 async function runLoginMode(profiles) {
@@ -604,6 +646,11 @@ async function main() {
       } catch (error) {
         const message = error instanceof Error ? error.message : "seller_center_browser_unavailable";
         console.error(`[seller-center-agent] Chrome CDP unavailable at ${cdpUrl}: ${message}`);
+        await tryLaunchCdpBrowser().catch((launchError) => {
+          const launchMessage =
+            launchError instanceof Error ? launchError.message : "seller_center_browser_launch_failed";
+          console.error(`[seller-center-agent] Chrome CDP launch helper failed: ${launchMessage}`);
+        });
         await sleep(browserUnavailableBackoffMs);
         continue;
       }
