@@ -12,6 +12,7 @@
     "seller-center:profiles": "node ./scripts/generate-seller-center-profiles.cjs",
     "seller-center:login": "node ./scripts/seller-center-agent.cjs --login",
     "seller-center:agent": "node ./scripts/seller-center-agent.cjs",
+    "seller-center:extension-bridge": "node ./scripts/seller-center-extension-bridge.cjs",
     "preflight": "npm exec tsc --noEmit && npm test && npm run build",
     "seed:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/seed-load-test.cjs",
     "verify:load-test": "node --require ./tests/helpers/register-ts.cjs ./scripts/verify-load-test.cjs"

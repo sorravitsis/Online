@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "AWB Shopee Seller Center Automation",
+  "version": "0.1.0",
+  "description": "Automates Shopee Seller Center AWB printing from the logged-in Chrome profile.",
+  "permissions": ["alarms", "downloads", "storage", "tabs"],
+  "host_permissions": [
+    "http://127.0.0.1:5137/*",
+    "https://seller.shopee.co.th/*",
+    "https://accounts.shopee.co.th/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://seller.shopee.co.th/*", "https://accounts.shopee.co.th/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "AWB Shopee Automation"
+  }
+}
