@@ -62,7 +62,11 @@ const configPath =
   path.join(process.cwd(), "scripts", "windows", "shopee-seller-center-profiles.json");
 const cdpUrl =
   process.env.SELLER_CENTER_CDP_URL || process.env.SHOPEE_SELLER_CENTER_CDP_URL || "";
-const cdpLaunchCommand = cdpUrl ? process.env.SELLER_CENTER_CDP_LAUNCH_COMMAND || defaultCdpLaunchCommand() : "";
+const cdpAutoLaunch = process.env.SELLER_CENTER_CDP_AUTO_LAUNCH === "true";
+const cdpLaunchCommand =
+  cdpUrl && cdpAutoLaunch
+    ? process.env.SELLER_CENTER_CDP_LAUNCH_COMMAND || defaultCdpLaunchCommand()
+    : "";
 const browserExecutable = cdpUrl
   ? ""
   : process.env.SELLER_CENTER_BROWSER_PATH || findBrowserExecutable();
